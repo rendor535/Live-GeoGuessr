@@ -14,7 +14,7 @@ import com.example.livegeoguessr.ui.screens.settings.SettingsScreen
 fun AppNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
+        startDestination = Screen.Camera.route,
         modifier = modifier
     ) {
         composable(Screen.Home.route) {
