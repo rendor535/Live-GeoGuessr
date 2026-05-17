@@ -11,4 +11,6 @@
     <string name="location_permission_rationale">Location permission is required to tag the photo.</string>
     <string name="grant_permission">Grant Permission</string>
     <string name="your_location">Your Location</string>
+    <string name="no_posts">No posts</string>
+    <string name="post_image_description">Post image</string>
 </resources>
