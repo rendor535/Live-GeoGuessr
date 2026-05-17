@@ -11,4 +11,10 @@
     <string name="location_permission_rationale">Location permission is required to tag the photo.</string>
     <string name="grant_permission">Grant Permission</string>
     <string name="your_location">Your Location</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="dont_have_account">Don\'t have an account? Register</string>
+    <string name="already_have_account">Already have an account? Login</string>
 </resources>

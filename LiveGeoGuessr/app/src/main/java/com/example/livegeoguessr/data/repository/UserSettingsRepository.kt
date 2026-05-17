@@ -31,9 +31,28 @@ class SettingsRepository @Inject constructor(
                 preferences[PreferencesKeys.yes] ?: false
             }
 
+    val isLoggedInFlow: Flow<Boolean> =
+        context.dataStore.data
+            .catch {
+                if (it is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw it
+                }
+            }
+            .map { preferences ->
+                preferences[PreferencesKeys.isLoggedIn] ?: false
+            }
+
     suspend fun setDarkMode(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.yes] = enabled
+        }
+    }
+
+    suspend fun setLoggedIn(isLoggedIn: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.isLoggedIn] = isLoggedIn
         }
     }
 }

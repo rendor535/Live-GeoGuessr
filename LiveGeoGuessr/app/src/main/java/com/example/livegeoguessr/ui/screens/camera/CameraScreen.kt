@@ -45,7 +45,7 @@ fun CameraScreen() {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             val textToShow = if (cameraPermissionState.status.shouldShowRationale) {
                 stringResource(R.string.camera_permission_rationale)

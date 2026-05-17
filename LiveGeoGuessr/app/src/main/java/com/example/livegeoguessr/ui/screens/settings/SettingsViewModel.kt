@@ -20,6 +20,13 @@ class SettingsViewModel @Inject constructor(
             initialValue = false
         )
 
+    val isLoggedIn = repository.isLoggedInFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
     fun updateDarkMode(enabled: Boolean) {
         viewModelScope.launch {
             repository.setDarkMode(enabled)
