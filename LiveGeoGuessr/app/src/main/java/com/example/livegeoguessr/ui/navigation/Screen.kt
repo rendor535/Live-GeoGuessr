@@ -11,4 +11,10 @@ sealed class Screen(val route: String, val icon: ImageVector) {
     object Camera : Screen("camera", Icons.Default.CameraAlt)
     object Settings : Screen("settings", Icons.Default.Settings)
     object Login : Screen("login", Icons.Default.Person)
+    object Guess : Screen("guess/{imageUrl}/{lat}/{lon}", Icons.Default.Home) {
+        fun createRoute(imageUrl: String, lat: Double, lon: Double): String {
+            val encodedUrl = java.net.URLEncoder.encode(imageUrl, "UTF-8")
+            return "guess/$encodedUrl/$lat/$lon"
+        }
+    }
 }

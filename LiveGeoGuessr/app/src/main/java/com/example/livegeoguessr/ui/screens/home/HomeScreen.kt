@@ -1,5 +1,6 @@
 package com.example.livegeoguessr.ui.screens.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,8 +33,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.livegeoguessr.domain.model.Post
 
+import androidx.navigation.NavController
+import com.example.livegeoguessr.ui.navigation.Screen
+
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(
+    navController: NavController,
+    viewModel: HomeViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
 
     when {
@@ -56,7 +63,14 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
                 verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
             ) {
                 items(uiState.posts) { post ->
-                    PostItem(post = post)
+                    PostItem(
+                        post = post,
+                        onClick = {
+                            navController.navigate(
+                                Screen.Guess.createRoute(post.imageUrl, post.latitude, post.longitude)
+                            )
+                        }
+                    )
                 }
             }
         }
@@ -64,9 +78,11 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun PostItem(post: Post) {
+fun PostItem(post: Post, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
     ) {
         Column {
             Row(

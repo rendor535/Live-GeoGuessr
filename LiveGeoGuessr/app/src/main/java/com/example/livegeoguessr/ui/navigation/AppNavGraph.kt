@@ -9,6 +9,7 @@ import com.example.livegeoguessr.ui.screens.home.HomeScreen
 import com.example.livegeoguessr.ui.screens.LoginScreen
 import com.example.livegeoguessr.ui.screens.camera.CameraScreen
 import com.example.livegeoguessr.ui.screens.settings.SettingsScreen
+import com.example.livegeoguessr.ui.screens.guess.GuessScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
@@ -18,7 +19,7 @@ fun AppNavGraph(navController: NavHostController, modifier: Modifier = Modifier)
         modifier = modifier
     ) {
         composable(Screen.Home.route) {
-            HomeScreen()
+            HomeScreen(navController)
         }
         composable(Screen.Camera.route) {
             CameraScreen()
@@ -28,6 +29,12 @@ fun AppNavGraph(navController: NavHostController, modifier: Modifier = Modifier)
         }
         composable (Screen.Login.route) {
             LoginScreen()
+        }
+        composable(Screen.Guess.route) { backStackEntry ->
+            val imageUrl = backStackEntry.arguments?.getString("imageUrl") ?: ""
+            val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
+            val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0
+            GuessScreen(imageUrl, lat, lon)
         }
     }
 }

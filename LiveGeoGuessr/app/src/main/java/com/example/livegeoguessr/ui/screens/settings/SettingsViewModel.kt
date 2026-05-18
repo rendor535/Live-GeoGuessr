@@ -8,6 +8,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val repository: SettingsRepository
@@ -20,9 +21,22 @@ class SettingsViewModel @Inject constructor(
             initialValue = false
         )
 
+    val useMiles = repository.useMilesFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     fun updateDarkMode(enabled: Boolean) {
         viewModelScope.launch {
             repository.setDarkMode(enabled)
+        }
+    }
+
+    fun updateUseMiles(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setUseMiles(enabled)
         }
     }
 }
