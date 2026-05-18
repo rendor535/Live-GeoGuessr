@@ -26,6 +26,7 @@ class SettingsViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
+        )
     val useMiles = repository.useMilesFlow
         .stateIn(
             scope = viewModelScope,
