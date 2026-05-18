@@ -44,6 +44,19 @@ class SettingsRepository @Inject constructor(
                 preferences[PreferencesKeys.USE_MILES] ?: false
             }
 
+    val isLoggedInFlow: Flow<Boolean> =
+        context.dataStore.data
+            .catch {
+                if (it is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw it
+                }
+            }
+            .map { preferences ->
+                preferences[PreferencesKeys.isLoggedIn] ?: false
+            }
+
     suspend fun setDarkMode(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.DARK_MODE] = enabled
@@ -53,6 +66,12 @@ class SettingsRepository @Inject constructor(
     suspend fun setUseMiles(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.USE_MILES] = enabled
+        }
+    }
+
+    suspend fun setLoggedIn(isLoggedIn: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.isLoggedIn] = isLoggedIn
         }
     }
 }

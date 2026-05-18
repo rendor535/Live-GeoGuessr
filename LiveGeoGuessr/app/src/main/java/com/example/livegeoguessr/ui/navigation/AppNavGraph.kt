@@ -6,16 +6,20 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.livegeoguessr.ui.screens.home.HomeScreen
-import com.example.livegeoguessr.ui.screens.LoginScreen
+import com.example.livegeoguessr.ui.screens.auth.AuthScreen
 import com.example.livegeoguessr.ui.screens.camera.CameraScreen
 import com.example.livegeoguessr.ui.screens.settings.SettingsScreen
 import com.example.livegeoguessr.ui.screens.guess.GuessScreen
 
 @Composable
-fun AppNavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
+fun AppNavGraph(
+    navController: NavHostController,
+    isLoggedIn: Boolean,
+    modifier: Modifier = Modifier
+) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
+        startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route,
         modifier = modifier
     ) {
         composable(Screen.Home.route) {
@@ -28,7 +32,13 @@ fun AppNavGraph(navController: NavHostController, modifier: Modifier = Modifier)
             SettingsScreen()
         }
         composable (Screen.Login.route) {
-            LoginScreen()
+            AuthScreen(
+                onSuccess = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
+            )
         }
         composable(Screen.Guess.route) { backStackEntry ->
             val imageUrl = backStackEntry.arguments?.getString("imageUrl") ?: ""

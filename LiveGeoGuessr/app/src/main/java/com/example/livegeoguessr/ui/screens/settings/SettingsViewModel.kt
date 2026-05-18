@@ -21,6 +21,12 @@ class SettingsViewModel @Inject constructor(
             initialValue = false
         )
 
+    val isLoggedIn = repository.isLoggedInFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
     val useMiles = repository.useMilesFlow
         .stateIn(
             scope = viewModelScope,
