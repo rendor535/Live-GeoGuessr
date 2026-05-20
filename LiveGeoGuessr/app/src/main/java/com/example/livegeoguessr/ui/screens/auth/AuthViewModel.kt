@@ -3,6 +3,7 @@ package com.example.livegeoguessr.ui.screens.auth
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.livegeoguessr.R
 import com.example.livegeoguessr.data.repository.AuthRepository
 import com.example.livegeoguessr.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +17,7 @@ import javax.inject.Inject
 data class AuthUiState(
     val isLoading: Boolean = false,
     val isLoginMode: Boolean = true,
-    val error: String? = null,
+    val errorResId: Int? = null,
     val isSuccess: Boolean = false
 )
 
@@ -30,12 +31,12 @@ class AuthViewModel @Inject constructor(
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     fun toggleMode() {
-        _uiState.update { it.copy(isLoginMode = !it.isLoginMode, error = null) }
+        _uiState.update { it.copy(isLoginMode = !it.isLoginMode, errorResId = null) }
     }
 
     fun authenticate(email: String, password: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoading = true, errorResId = null) }
             val success = if (_uiState.value.isLoginMode) {
                 true //authRepository.login(email, password)
             } else {
@@ -46,20 +47,20 @@ class AuthViewModel @Inject constructor(
                 settingsRepository.setLoggedIn(true)
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } else {
-                _uiState.update { it.copy(isLoading = false, error = "Authentication failed") }
+                _uiState.update { it.copy(isLoading = false, errorResId = R.string.authentication_failed) }
             }
         }
     }
 
     fun loginWithGoogle(context: Context) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoading = true, errorResId = null) }
             try {
                 authRepository.loginWithGoogle(context)
                 settingsRepository.setLoggedIn(true)
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Google login failed") }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorResId = R.string.google_login_failed) }
             }
         }
     }

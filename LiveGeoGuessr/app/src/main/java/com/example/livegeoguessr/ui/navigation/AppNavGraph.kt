@@ -9,6 +9,7 @@ import com.example.livegeoguessr.ui.screens.home.HomeScreen
 import com.example.livegeoguessr.ui.screens.auth.AuthScreen
 import com.example.livegeoguessr.ui.screens.camera.CameraScreen
 import com.example.livegeoguessr.ui.screens.settings.SettingsScreen
+import com.example.livegeoguessr.ui.screens.settings.ProfileScreen
 import com.example.livegeoguessr.ui.screens.guess.GuessScreen
 
 @Composable
@@ -19,7 +20,7 @@ fun AppNavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = if (isLoggedIn) Screen.Login.route else Screen.Login.route,
+        startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route,
         modifier = modifier
     ) {
         composable(Screen.Home.route) {
@@ -29,7 +30,10 @@ fun AppNavGraph(
             CameraScreen()
         }
         composable(Screen.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(navController = navController)
+        }
+        composable(Screen.Profile.route) {
+            ProfileScreen(navController = navController)
         }
         composable (Screen.Login.route) {
             AuthScreen(
