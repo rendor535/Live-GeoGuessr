@@ -18,6 +18,7 @@ import com.example.livegeoguessr.ui.navigation.BottomBar
 import com.example.livegeoguessr.ui.navigation.Screen
 import com.example.livegeoguessr.ui.screens.settings.SettingsViewModel
 import com.example.livegeoguessr.ui.theme.LiveGeoGuessrTheme
+import com.example.livegeoguessr.ui.screens.AuthTestScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
