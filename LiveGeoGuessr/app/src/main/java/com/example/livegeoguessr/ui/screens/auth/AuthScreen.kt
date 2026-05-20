@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -24,6 +25,7 @@ fun AuthScreen(
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
     
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -112,6 +114,18 @@ fun AuthScreen(
                 if (uiState.isLoginMode) stringResource(R.string.dont_have_account) 
                 else stringResource(R.string.already_have_account)
             )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+        OutlinedButton(
+            onClick = { viewModel.loginWithGoogle(context) },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !uiState.isLoading
+        ) {
+            Text(stringResource(R.string.login_with_google))
         }
     }
 }

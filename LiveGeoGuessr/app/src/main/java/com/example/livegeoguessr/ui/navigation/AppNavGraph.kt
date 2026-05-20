@@ -19,7 +19,7 @@ fun AppNavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route,
+        startDestination = if (isLoggedIn) Screen.Login.route else Screen.Login.route,
         modifier = modifier
     ) {
         composable(Screen.Home.route) {

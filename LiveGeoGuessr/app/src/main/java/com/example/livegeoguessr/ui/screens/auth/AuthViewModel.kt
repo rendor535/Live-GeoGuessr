@@ -1,5 +1,6 @@
 package com.example.livegeoguessr.ui.screens.auth
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.livegeoguessr.data.repository.AuthRepository
@@ -46,6 +47,19 @@ class AuthViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false, isSuccess = true) }
             } else {
                 _uiState.update { it.copy(isLoading = false, error = "Authentication failed") }
+            }
+        }
+    }
+
+    fun loginWithGoogle(context: Context) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                authRepository.loginWithGoogle(context)
+                settingsRepository.setLoggedIn(true)
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Google login failed") }
             }
         }
     }
