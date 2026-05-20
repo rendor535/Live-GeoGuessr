@@ -4,17 +4,21 @@ import android.content.Context
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import com.example.livegeoguessr.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AuthRepository(
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+@Singleton
+class AuthRepository @Inject constructor() {
+    private val auth: FirebaseAuth get() = FirebaseAuth.getInstance()
     private val userRepository: UserRepository = UserRepository()
-) {
+
     fun isLoggedIn(): Boolean {
         return auth.currentUser != null
     }
@@ -26,13 +30,7 @@ class AuthRepository(
     suspend fun loginWithGoogle(context: Context) {
         val credentialManager = CredentialManager.create(context)
 
-        val webClientId = context.getString(
-            context.resources.getIdentifier(
-                "default_web_client_id",
-                "string",
-                context.packageName
-            )
-        )
+        val webClientId = context.getString(R.string.default_web_client_id)
 
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
