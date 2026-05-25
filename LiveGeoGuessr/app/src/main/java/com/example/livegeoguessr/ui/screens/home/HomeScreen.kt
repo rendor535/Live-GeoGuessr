@@ -67,7 +67,12 @@ fun HomeScreen(
                         post = post,
                         onClick = {
                             navController.navigate(
-                                Screen.Guess.createRoute(post.imageUrl, post.latitude, post.longitude)
+                                Screen.Guess.createRoute(
+                                    postId = post.id,
+                                    imageUrl = post.imageUrl,
+                                    lat = post.latitude,
+                                    lon = post.longitude
+                                )
                             )
                         }
                     )

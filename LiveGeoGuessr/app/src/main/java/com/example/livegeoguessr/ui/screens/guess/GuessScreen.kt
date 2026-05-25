@@ -26,26 +26,46 @@ import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import androidx.compose.material3.MaterialTheme
-import kotlin.math.*
 
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @Composable
 fun GuessScreen(
+    postId: String,
     imageUrl: String,
-    targetLat: Double,
-    targetLon: Double,
     viewModel: GuessViewModel = hiltViewModel()
 ) {
     var isImageFullScreen by remember { mutableStateOf(false) }
-    var guessedLocation by remember { mutableStateOf<GeoPoint?>(null) }
-    var resultDistance by remember { mutableStateOf<Double?>(null) }
+
     val useMiles by viewModel.useMiles.collectAsState()
-    val targetLocation = remember(targetLat, targetLon) { GeoPoint(targetLat, targetLon) }
+    val guessUiState by viewModel.guessUiState.collectAsState()
+
+    val guessedLocation = remember(
+        guessUiState.selectedLatitude,
+        guessUiState.selectedLongitude
+    ) {
+        val latitude = guessUiState.selectedLatitude
+        val longitude = guessUiState.selectedLongitude
+
+        if (latitude != null && longitude != null) {
+            GeoPoint(latitude, longitude)
+        } else {
+            null
+        }
+    }
+
+    val targetLocation = remember(guessUiState.result) {
+        guessUiState.result?.let { result ->
+            GeoPoint(result.realLatitude, result.realLongitude)
+        }
+    }
+
+    LaunchedEffect(postId) {
+        viewModel.loadGuessStatus(postId)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (isImageFullScreen) {
-            // Full Screen Image
             AsyncImage(
                 model = imageUrl,
                 contentDescription = stringResource(R.string.full_screen_image),
@@ -55,8 +75,7 @@ fun GuessScreen(
                     .clickable { isImageFullScreen = false },
                 contentScale = ContentScale.Fit
             )
-            
-            // Preview Map in Top Right
+
             Card(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -70,21 +89,24 @@ fun GuessScreen(
                     guessedLocation = guessedLocation,
                     modifier = Modifier.fillMaxSize(),
                     targetLocation = targetLocation,
-                    showResult = resultDistance != null,
+                    showResult = guessUiState.result != null,
                     onLocationSelected = null
                 )
             }
         } else {
-            // Full Screen Map
             MapViewContainer(
                 guessedLocation = guessedLocation,
                 targetLocation = targetLocation,
-                showResult = resultDistance != null,
-                onLocationSelected = { if (resultDistance == null) guessedLocation = it },
+                showResult = guessUiState.result != null,
+                onLocationSelected = {
+                    viewModel.selectLocation(
+                        latitude = it.latitude,
+                        longitude = it.longitude
+                    )
+                },
                 modifier = Modifier.fillMaxSize()
             )
-            
-            // Preview Image in Top Right
+
             Card(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -102,25 +124,30 @@ fun GuessScreen(
                 )
             }
 
-            // Guess Button
-            if (guessedLocation != null && resultDistance == null) {
+            if (
+                guessedLocation != null &&
+                guessUiState.result == null
+            ) {
                 Button(
                     onClick = {
-                        resultDistance = calculateDistance(
-                            guessedLocation!!.latitude, guessedLocation!!.longitude,
-                            targetLat, targetLon
-                        )
+                        viewModel.submitGuess(postId)
                     },
+                    enabled = !guessUiState.isSubmitting,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 32.dp)
                 ) {
-                    Text(stringResource(R.string.confirm_guess))
+                    Text(
+                        text = if (guessUiState.isSubmitting) {
+                            "Wysyłanie..."
+                        } else {
+                            stringResource(R.string.confirm_guess)
+                        }
+                    )
                 }
             }
 
-            // Result Info
-            if (resultDistance != null) {
+            guessUiState.result?.let { result ->
                 Card(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -131,11 +158,11 @@ fun GuessScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         val distance = if (useMiles) {
-                            (resultDistance!! / 1000) * 0.621371
+                            (result.distanceMeters / 1000) * 0.621371
                         } else {
-                            resultDistance!! / 1000
+                            result.distanceMeters / 1000
                         }
-                        
+
                         val unitResId = if (useMiles) {
                             R.string.distance_result_miles
                         } else {
@@ -143,30 +170,40 @@ fun GuessScreen(
                         }
 
                         Text(
-                            text = stringResource(unitResId, distance),
+                            text = "Zdobyto ${result.points} pkt",
                             style = MaterialTheme.typography.headlineSmall,
+                            color = Color.Black
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = stringResource(unitResId, distance),
+                            style = MaterialTheme.typography.bodyLarge,
                             color = Color.Black
                         )
                     }
                 }
             }
+
+            guessUiState.errorMessage?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.9f)
+                    )
+                ) {
+                    Text(
+                        text = error,
+                        modifier = Modifier.padding(16.dp),
+                        color = Color.Black
+                    )
+                }
+            }
         }
     }
-}
-
-private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-    val r = 6371e3 // Earth radius in meters
-    val p1 = lat1 * PI / 180
-    val p2 = lat2 * PI / 180
-    val dLat = (lat2 - lat1) * PI / 180
-    val dLon = (lon2 - lon1) * PI / 180
-
-    val a = sin(dLat / 2) * sin(dLat / 2) +
-            cos(p1) * cos(p2) *
-            sin(dLon / 2) * sin(dLon / 2)
-    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-
-    return r * c
 }
 
 @Composable
@@ -187,7 +224,7 @@ fun MapViewContainer(
         outlinePaint.color = android.graphics.Color.RED
         outlinePaint.strokeWidth = 5f
     } }
-    var hasZoomedToResult by remember { mutableStateOf(false) }
+    var hasZoomedToResult by remember(guessedLocation, targetLocation, showResult) { mutableStateOf(false) }
 
     AndroidView(
         factory = {

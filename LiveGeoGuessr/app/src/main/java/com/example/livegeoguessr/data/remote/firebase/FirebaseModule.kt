@@ -3,6 +3,8 @@ package com.example.livegeoguessr.data.remote.firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.functions.FirebaseFunctions
+
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -41,5 +43,8 @@ object FirebaseModule {
     @Singleton
     fun provideFirebaseStorage(): FirebaseStorage {
         return storage
+    }
+    val functions: FirebaseFunctions by lazy {
+        FirebaseFunctions.getInstance("us-central1")
     }
 }
