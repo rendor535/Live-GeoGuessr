@@ -13,12 +13,15 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.livegeoguessr.R
 import com.google.android.gms.maps.model.LatLng
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -36,11 +40,13 @@ import com.google.accompanist.permissions.shouldShowRationale
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraScreen() {
+fun CameraScreen(
+    viewModel: CameraViewModel = hiltViewModel()
+) {
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
     if (cameraPermissionState.status.isGranted) {
-        CameraContent()
+        CameraContent(viewModel = viewModel)
     } else {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -52,7 +58,9 @@ fun CameraScreen() {
             } else {
                 stringResource(R.string.camera_permission_required)
             }
+
             Text(textToShow, modifier = Modifier.padding(16.dp))
+
             Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
                 Text(stringResource(R.string.request_permission))
             }
@@ -61,10 +69,23 @@ fun CameraScreen() {
 }
 
 @Composable
-private fun CameraContent() {
+private fun CameraContent(
+    viewModel: CameraViewModel
+) {
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isPhotoConfirmed by remember { mutableStateOf(false) }
     var location by remember { mutableStateOf<LatLng?>(null) }
+
+    val uploadState by viewModel.uploadState.collectAsState()
+
+    LaunchedEffect(uploadState.isUploaded) {
+        if (uploadState.isUploaded) {
+            capturedBitmap = null
+            isPhotoConfirmed = false
+            location = null
+            viewModel.resetUploadState()
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {
@@ -73,16 +94,19 @@ private fun CameraContent() {
                     onPhotoCaptured = { bitmap ->
                         capturedBitmap = bitmap
                         isPhotoConfirmed = false
+                        location = null
                     },
                     modifier = Modifier.fillMaxSize()
                 )
             }
+
             !isPhotoConfirmed -> {
                 PhotoPreview(
                     bitmap = capturedBitmap!!,
                     modifier = Modifier.fillMaxSize()
                 )
             }
+
             else -> {
                 LocationPreview(
                     onLocationAcquired = { location = it },
@@ -97,7 +121,9 @@ private fun CameraContent() {
                     capturedBitmap = null
                     isPhotoConfirmed = false
                     location = null
+                    viewModel.resetUploadState()
                 },
+                enabled = !uploadState.isUploading,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(16.dp),
@@ -118,12 +144,18 @@ private fun CameraContent() {
                     if (!isPhotoConfirmed) {
                         isPhotoConfirmed = true
                     } else {
-                        capturedBitmap = null
-                        isPhotoConfirmed = false
-                        location = null
+                        val bitmap = capturedBitmap
+                        val currentLocation = location
+
+                        if (bitmap != null && currentLocation != null) {
+                            viewModel.uploadPost(
+                                bitmap = bitmap,
+                                location = currentLocation
+                            )
+                        }
                     }
                 },
-                enabled = !isPhotoConfirmed || location != null,
+                enabled = !uploadState.isUploading && (!isPhotoConfirmed || location != null),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(32.dp)
@@ -133,10 +165,36 @@ private fun CameraContent() {
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Icon(
-                    imageVector = if (isPhotoConfirmed) Icons.AutoMirrored.Filled.Send else Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = if (isPhotoConfirmed) stringResource(R.string.post) else stringResource(R.string.confirm_photo),
-                    modifier = Modifier.size(36.dp)
+                if (uploadState.isUploading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(36.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 3.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (isPhotoConfirmed) {
+                            Icons.AutoMirrored.Filled.Send
+                        } else {
+                            Icons.AutoMirrored.Filled.ArrowForward
+                        },
+                        contentDescription = if (isPhotoConfirmed) {
+                            stringResource(R.string.post)
+                        } else {
+                            stringResource(R.string.confirm_photo)
+                        },
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            }
+
+            uploadState.errorMessage?.let { message ->
+                Text(
+                    text = message,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
                 )
             }
         }
