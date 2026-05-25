@@ -1,6 +1,7 @@
 package com.example.livegeoguessr.domain.model
 
 data class Post (
+    val id: String,
     val user: String,
     val imageUrl: String,
     val latitude: Double,
