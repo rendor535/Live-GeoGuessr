@@ -82,10 +82,10 @@ class PostRepository @Inject constructor(
             longitude = longitude
         )
     }
+    private fun Bitmap.toJpegByteArray(): ByteArray {
+        val outputStream = ByteArrayOutputStream()
+        compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+        return outputStream.toByteArray()
+    }
 }
 
-private fun Bitmap.toJpegByteArray(): ByteArray {
-    val outputStream = ByteArrayOutputStream()
-    compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
-    return outputStream.toByteArray()
-}
