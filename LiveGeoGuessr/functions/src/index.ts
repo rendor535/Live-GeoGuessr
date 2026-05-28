@@ -16,6 +16,7 @@ type GameModeConfig = {
   maxScoringDistanceMeters: number;
   maxPoints: number;
   initialMapDiameterMeters: number;
+  initialMapOffsetMaxMeters: number;
   scoringVersion: number;
 };
 
@@ -41,6 +42,7 @@ function getGameModeConfig(type: string): GameModeConfig {
         maxScoringDistanceMeters: 2000,
         maxPoints: 10000,
         initialMapDiameterMeters: 36000,
+        initialMapOffsetMaxMeters: 30000,
         scoringVersion: 1,
       };
 
@@ -109,6 +111,143 @@ function assertValidCoordinates(latitude: number, longitude: number): void {
     throw new HttpsError("invalid-argument", "Invalid longitude.");
   }
 }
+
+function randomGaussian(): number {
+  let u = 0;
+  let v = 0;
+
+  while (u === 0) {
+    u = Math.random();
+  }
+
+  while (v === 0) {
+    v = Math.random();
+  }
+
+  return Math.sqrt(-2.0 * Math.log(u)) *
+    Math.cos(2.0 * Math.PI * v);
+}
+
+function normalizeLongitude(longitude: number): number {
+  if (longitude > 180) {
+    return longitude - 360;
+  }
+
+  if (longitude < -180) {
+    return longitude + 360;
+  }
+
+  return longitude;
+}
+
+function createApproximateMapCenter(
+  realLatitude: number,
+  realLongitude: number,
+  maxOffsetMeters: number
+): {
+  latitude: number;
+  longitude: number;
+} {
+  const earthRadiusMeters = 6371000;
+
+  const angle = Math.random() * 2 * Math.PI;
+
+  const gaussianDistanceMeters = Math.abs(randomGaussian()) *
+    (maxOffsetMeters / 3);
+
+  const distanceMeters = Math.min(
+    gaussianDistanceMeters,
+    maxOffsetMeters
+  );
+
+  const northOffsetMeters = Math.cos(angle) * distanceMeters;
+  const eastOffsetMeters = Math.sin(angle) * distanceMeters;
+
+  const latitudeOffset =
+    northOffsetMeters / earthRadiusMeters * 180 / Math.PI;
+
+  const longitudeOffset =
+    eastOffsetMeters /
+    (earthRadiusMeters * Math.cos(toRadians(realLatitude))) *
+    180 /
+    Math.PI;
+
+  const latitude = Math.max(
+    -90,
+    Math.min(90, realLatitude + latitudeOffset)
+  );
+
+  const longitude = normalizeLongitude(realLongitude + longitudeOffset);
+
+  return {
+    latitude,
+    longitude,
+  };
+}
+export const getGuessMapPreview = onCall(
+  {
+    region: "us-central1",
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "User must be logged in.");
+    }
+
+    const postId = String(request.data.postId ?? "");
+    const gameMode = String(request.data.gameMode ?? "CITY");
+
+    if (!postId) {
+      throw new HttpsError("invalid-argument", "Missing postId.");
+    }
+
+    const config = getGameModeConfig(gameMode);
+
+    const postSnapshot = await db
+      .collection("posts")
+      .doc(postId)
+      .get();
+
+    if (!postSnapshot.exists) {
+      throw new HttpsError("not-found", "Post not found.");
+    }
+
+    const post = postSnapshot.data();
+
+    if (!post) {
+      throw new HttpsError("not-found", "Post not found.");
+    }
+
+    const realLatitude = Number(post.latitude);
+    const realLongitude = Number(post.longitude);
+
+    assertValidCoordinates(realLatitude, realLongitude);
+
+    const postGameMode = String(post.gameMode ?? "CITY");
+
+    if (postGameMode !== config.type) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Game mode does not match post game mode."
+      );
+    }
+
+    const approximateCenter = createApproximateMapCenter(
+      realLatitude,
+      realLongitude,
+      config.initialMapOffsetMaxMeters
+    );
+
+    return {
+      postId,
+      gameMode: config.type,
+      initialMapCenterLatitude: approximateCenter.latitude,
+      initialMapCenterLongitude: approximateCenter.longitude,
+      initialMapDiameterMeters: config.initialMapDiameterMeters,
+    };
+  }
+);
 
 export const submitGuess = onCall(
   {

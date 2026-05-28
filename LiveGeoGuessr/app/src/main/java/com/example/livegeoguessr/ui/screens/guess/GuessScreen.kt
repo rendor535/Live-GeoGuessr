@@ -60,6 +60,20 @@ fun GuessScreen(
         }
     }
 
+    val initialCenter = remember(
+        guessUiState.initialMapCenterLatitude,
+        guessUiState.initialMapCenterLongitude
+    ) {
+        val latitude = guessUiState.initialMapCenterLatitude
+        val longitude = guessUiState.initialMapCenterLongitude
+
+        if (latitude != null && longitude != null) {
+            GeoPoint(latitude, longitude)
+        } else {
+            null
+        }
+    }
+
     LaunchedEffect(postId) {
         viewModel.loadGuessStatus(postId)
     }
@@ -90,6 +104,8 @@ fun GuessScreen(
                     modifier = Modifier.fillMaxSize(),
                     targetLocation = targetLocation,
                     showResult = guessUiState.result != null,
+                    initialCenter = initialCenter,
+                    initialMapDiameterMeters = guessUiState.initialMapDiameterMeters,
                     onLocationSelected = null
                 )
             }
@@ -98,6 +114,8 @@ fun GuessScreen(
                 guessedLocation = guessedLocation,
                 targetLocation = targetLocation,
                 showResult = guessUiState.result != null,
+                initialCenter = initialCenter,
+                initialMapDiameterMeters = guessUiState.initialMapDiameterMeters,
                 onLocationSelected = {
                     viewModel.selectLocation(
                         latitude = it.latitude,
@@ -106,6 +124,7 @@ fun GuessScreen(
                 },
                 modifier = Modifier.fillMaxSize()
             )
+
 
             Card(
                 modifier = Modifier
@@ -212,6 +231,8 @@ fun MapViewContainer(
     modifier: Modifier = Modifier,
     targetLocation: GeoPoint? = null,
     showResult: Boolean = false,
+    initialCenter: GeoPoint? = null,
+    initialMapDiameterMeters: Double? = null,
     onLocationSelected: ((GeoPoint) -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -225,14 +246,17 @@ fun MapViewContainer(
         outlinePaint.strokeWidth = 5f
     } }
     var hasZoomedToResult by remember(guessedLocation, targetLocation, showResult) { mutableStateOf(false) }
-
+    var hasSetInitialCamera by remember(initialCenter, initialMapDiameterMeters) {
+        mutableStateOf(false)
+    }
     AndroidView(
         factory = {
             mapView.apply {
                 setMultiTouchControls(true)
+
                 controller.setZoom(5.0)
-                controller.setCenter(GeoPoint(52.2297, 21.0122)) // Default center
-                
+                controller.setCenter(GeoPoint(52.0, 19.0))
+
                 val eventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
                     override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
                         onLocationSelected?.invoke(p)
@@ -248,6 +272,22 @@ fun MapViewContainer(
         update = { view ->
             guessMarker.title = yourGuessTitle
             targetMarker.title = actualLocationTitle
+
+            if (
+                !hasSetInitialCamera &&
+                !showResult &&
+                initialCenter != null &&
+                initialMapDiameterMeters != null
+            ) {
+                val boundingBox = createBoundingBoxAround(
+                    center = initialCenter,
+                    diameterMeters = initialMapDiameterMeters
+                )
+
+                view.zoomToBoundingBox(boundingBox, true, 150)
+                hasSetInitialCamera = true
+            }
+
 
             if (guessedLocation != null) {
                 guessMarker.position = guessedLocation
@@ -276,5 +316,34 @@ fun MapViewContainer(
             }
             view.invalidate()
         }
+    )
+}
+
+private fun createBoundingBoxAround(
+    center: GeoPoint,
+    diameterMeters: Double
+): org.osmdroid.util.BoundingBox {
+    val earthRadiusMeters = 6_371_000.0
+    val radiusMeters = diameterMeters / 2.0
+
+    val latitudeDelta =
+        radiusMeters / earthRadiusMeters * 180.0 / Math.PI
+
+    val longitudeDelta =
+        radiusMeters /
+                (earthRadiusMeters * kotlin.math.cos(Math.toRadians(center.latitude))) *
+                180.0 /
+                Math.PI
+
+    val north = center.latitude + latitudeDelta
+    val south = center.latitude - latitudeDelta
+    val east = center.longitude + longitudeDelta
+    val west = center.longitude - longitudeDelta
+
+    return org.osmdroid.util.BoundingBox(
+        north,
+        east,
+        south,
+        west
     )
 }

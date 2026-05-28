@@ -3,6 +3,7 @@ package com.example.livegeoguessr.data.repository
 import com.example.livegeoguessr.data.remote.firebase.FirebaseModule
 import com.example.livegeoguessr.domain.model.GameModeType
 import com.example.livegeoguessr.domain.model.SubmitGuessResult
+import com.example.livegeoguessr.domain.model.GuessMapPreview
 import kotlinx.coroutines.tasks.await
 
 class GuessRepository {
@@ -69,6 +70,34 @@ class GuessRepository {
             scoringVersion = snapshot.getLong("scoringVersion")?.toInt() ?: 1,
             realLatitude = snapshot.getDouble("realLatitude") ?: 0.0,
             realLongitude = snapshot.getDouble("realLongitude") ?: 0.0
+        )
+    }
+
+    suspend fun getGuessMapPreview(
+        postId: String,
+        gameMode: GameModeType
+    ): GuessMapPreview {
+        val data = hashMapOf(
+            "postId" to postId,
+            "gameMode" to gameMode.name
+        )
+
+        val result = functions
+            .getHttpsCallable("getGuessMapPreview")
+            .call(data)
+            .await()
+
+        val map = result.data as Map<*, *>
+
+        return GuessMapPreview(
+            postId = map["postId"] as String,
+            gameMode = GameModeType.valueOf(map["gameMode"] as String),
+            initialMapCenterLatitude =
+                (map["initialMapCenterLatitude"] as Number).toDouble(),
+            initialMapCenterLongitude =
+                (map["initialMapCenterLongitude"] as Number).toDouble(),
+            initialMapDiameterMeters =
+                (map["initialMapDiameterMeters"] as Number).toDouble()
         )
     }
 }

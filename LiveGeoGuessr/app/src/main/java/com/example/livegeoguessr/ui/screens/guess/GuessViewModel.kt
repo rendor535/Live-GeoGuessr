@@ -19,6 +19,9 @@ import kotlinx.coroutines.launch
 data class GuessUiState(
     val selectedLatitude: Double? = null,
     val selectedLongitude: Double? = null,
+    val initialMapCenterLatitude: Double? = null,
+    val initialMapCenterLongitude: Double? = null,
+    val initialMapDiameterMeters: Double? = null,
     val isSubmitting: Boolean = false,
     val result: SubmitGuessResult? = null,
     val errorMessage: String? = null
@@ -49,11 +52,20 @@ class GuessViewModel @Inject constructor(
     fun loadGuessStatus(postId: String) {
         viewModelScope.launch {
             try {
+                val mapPreview =
+                    guessRepository.getGuessMapPreview(
+                        postId = postId,
+                        gameMode = GameModeType.CITY
+                    )
+
                 val existingGuess =
                     guessRepository.getMyGuessForPost(postId)
 
                 _guessUiState.value =
                     _guessUiState.value.copy(
+                        initialMapCenterLatitude = mapPreview.initialMapCenterLatitude,
+                        initialMapCenterLongitude = mapPreview.initialMapCenterLongitude,
+                        initialMapDiameterMeters = mapPreview.initialMapDiameterMeters,
                         result = existingGuess,
                         errorMessage = null
                     )
@@ -66,7 +78,6 @@ class GuessViewModel @Inject constructor(
             }
         }
     }
-
     fun selectLocation(
         latitude: Double,
         longitude: Double
