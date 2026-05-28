@@ -100,4 +100,7 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
     implementation(libs.osmdroid)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 }

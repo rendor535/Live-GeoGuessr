@@ -18,7 +18,7 @@ object GameModeConfigs {
                 displayName = "Miasto",
                 maxScoringDistanceMeters = 2_000.0,
                 maxPoints = 10_000,
-                initialMapDiameterMeters = 36_000.0,
+                initialMapDiameterMeters = 50.0,
                 scoringVersion = 1
             )
         }
