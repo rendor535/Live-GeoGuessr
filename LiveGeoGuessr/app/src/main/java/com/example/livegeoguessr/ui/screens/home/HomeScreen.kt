@@ -15,14 +15,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +32,7 @@ import com.example.livegeoguessr.domain.model.Post
 import androidx.navigation.NavController
 import com.example.livegeoguessr.ui.navigation.Screen
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
@@ -44,39 +40,45 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    when {
-        uiState.isLoading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+    PullToRefreshBox(
+        isRefreshing = uiState.isLoading,
+        onRefresh = { viewModel.loadPosts() },
+        modifier = Modifier.fillMaxSize()
+    ) {
+        when {
+            uiState.isLoading && uiState.posts.isEmpty() -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
-        }
 
-        uiState.posts.isEmpty() -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.no_posts))
+            uiState.posts.isEmpty() -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(stringResource(R.string.no_posts))
+                }
             }
-        }
 
-        else -> {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
-            ) {
-                items(uiState.posts) { post ->
-                    PostItem(
-                        post = post,
-                        onClick = {
-                            navController.navigate(
-                                Screen.Guess.createRoute(
-                                    postId = post.id,
-                                    imageUrl = post.imageUrl,
-                                    lat = post.latitude,
-                                    lon = post.longitude
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+                ) {
+                    items(uiState.posts) { post ->
+                        PostItem(
+                            post = post,
+                            onClick = {
+                                navController.navigate(
+                                    Screen.Guess.createRoute(
+                                        postId = post.id,
+                                        imageUrl = post.imageUrl,
+                                        lat = post.latitude,
+                                        lon = post.longitude
+                                    )
                                 )
-                            )
-                        }
-                    )
+                            }
+                        )
+                    }
                 }
             }
         }
