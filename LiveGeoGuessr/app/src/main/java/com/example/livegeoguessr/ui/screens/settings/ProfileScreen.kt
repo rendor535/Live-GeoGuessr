@@ -155,7 +155,8 @@ fun ProfileScreen(
             ProfileStatsCard(
                 icon = Icons.Default.Group,
                 label = stringResource(R.string.friends),
-                value = uiState.friendsCount.toString()
+                value = uiState.friendsCount.toString(),
+                onClick = { navController.navigate(Screen.Friends.route) }
             )
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -228,12 +229,14 @@ fun ProfileScreen(
 fun ProfileStatsCard(
     icon: ImageVector,
     label: String,
-    value: String
+    value: String,
+    onClick: () -> Unit = {}
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp),
+            .height(72.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
