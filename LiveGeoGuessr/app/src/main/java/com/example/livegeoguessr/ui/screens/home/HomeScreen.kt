@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -82,27 +83,41 @@ fun PostItem(post: Post, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
     ) {
         Column {
             Row(
                 modifier = Modifier
-                    .padding(12.dp)
+                    .padding(16.dp)
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                )
+                        .background(MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(
+                        text = post.user.firstOrNull()?.toString() ?: "",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
                 
                 Spacer(modifier = Modifier.width(12.dp))
                 
                 Text(
                     text = post.user,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                 )
             }
 
@@ -111,7 +126,8 @@ fun PostItem(post: Post, onClick: () -> Unit) {
                 contentDescription = stringResource(R.string.post_image_description),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp),
+                    .height(350.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
                 contentScale = ContentScale.Crop
             )
         }

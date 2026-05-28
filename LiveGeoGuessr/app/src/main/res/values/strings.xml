@@ -44,4 +44,8 @@
     <string name="google_login_failed">Google login failed</string>
     <string name="user_not_found">User not found</string>
     <string name="unknown_error">Unknown error</string>
+    <string name="friends">Friends</string>
+    <string name="posts">Posts</string>
+    <string name="guesses">Guesses</string>
+    <string name="add_friend">Add friend</string>
 </resources>

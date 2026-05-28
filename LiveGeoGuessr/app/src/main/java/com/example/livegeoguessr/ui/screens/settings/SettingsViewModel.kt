@@ -21,6 +21,9 @@ class SettingsViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
+    private val _isLoggedOut = MutableStateFlow(false)
+    val isLoggedOut: StateFlow<Boolean> = _isLoggedOut.asStateFlow()
+
     private val _profileImageUrl = MutableStateFlow<String?>(null)
     val profileImageUrl: StateFlow<String?> = _profileImageUrl.asStateFlow()
 
@@ -67,6 +70,21 @@ class SettingsViewModel @Inject constructor(
     fun updateUseMiles(enabled: Boolean) {
         viewModelScope.launch {
             repository.setUseMiles(enabled)
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            authRepository.logout()
+            repository.setLoggedIn(false)
+            _isLoggedOut.value = true
+        }
+    }
+
+    fun deleteAccount() {
+        viewModelScope.launch {
+            // TODO: Implement account deletion in AuthRepository
+            logout()
         }
     }
 }

@@ -18,6 +18,10 @@ import javax.inject.Inject
 data class ProfileUiState(
     val displayName: String = "",
     val profileImageUrl: String? = null,
+    val pointsTotal: Int = 0,
+    val friendsCount: Int = 0,
+    val postsCount: Int = 0,
+    val guessesCount: Int = 0,
     val isLoading: Boolean = false,
     val errorResId: Int? = null,
     val isSuccess: Boolean = false,
@@ -47,6 +51,10 @@ class ProfileViewModel @Inject constructor(
                 _uiState.update { it.copy(
                     displayName = profile?.nickname ?: "",
                     profileImageUrl = profile?.photoUrl,
+                    pointsTotal = profile?.stats?.pointsTotal ?: 0,
+                    friendsCount = profile?.stats?.friendsCount ?: 0,
+                    postsCount = profile?.stats?.postsCount ?: 0,
+                    guessesCount = profile?.stats?.guessesCount ?: 0,
                     isLoading = false
                 ) }
             } else {
