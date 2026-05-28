@@ -377,6 +377,8 @@ export const submitGuess = onCall(
         scoringVersion: config.scoringVersion,
         realLatitude,
         realLongitude,
+        guessedLatitude,
+        guessedLongitude,
       };
     });
 

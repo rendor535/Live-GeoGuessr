@@ -11,4 +11,6 @@ data class SubmitGuessResult(
     val scoringVersion: Int,
     val realLatitude: Double,
     val realLongitude: Double,
+    val guessedLatitude: Double,
+    val guessedLongitude: Double,
 )

@@ -41,6 +41,8 @@ class GuessRepository {
             maxPoints = (result["maxPoints"] as Number).toInt(),
             maxScoringDistanceMeters = (result["maxScoringDistanceMeters"] as Number).toDouble(),
             scoringVersion = (result["scoringVersion"] as Number).toInt(),
+            guessedLatitude = (result["guessedLatitude"] as Number).toDouble(),
+            guessedLongitude = (result["guessedLongitude"] as Number).toDouble(),
             realLatitude = (result["realLatitude"] as Number).toDouble(),
             realLongitude = (result["realLongitude"] as Number).toDouble()
         )
@@ -68,6 +70,8 @@ class GuessRepository {
             maxPoints = snapshot.getLong("maxPoints")?.toInt() ?: 10_000,
             maxScoringDistanceMeters = snapshot.getDouble("maxScoringDistanceMeters") ?: 2_000.0,
             scoringVersion = snapshot.getLong("scoringVersion")?.toInt() ?: 1,
+            guessedLatitude = snapshot.getDouble("guessedLatitude") ?: 0.0,
+            guessedLongitude = snapshot.getDouble("guessedLongitude") ?: 0.0,
             realLatitude = snapshot.getDouble("realLatitude") ?: 0.0,
             realLongitude = snapshot.getDouble("realLongitude") ?: 0.0
         )

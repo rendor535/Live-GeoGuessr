@@ -63,6 +63,8 @@ class GuessViewModel @Inject constructor(
 
                 _guessUiState.value =
                     _guessUiState.value.copy(
+                        selectedLatitude = existingGuess?.guessedLatitude,
+                        selectedLongitude = existingGuess?.guessedLongitude,
                         initialMapCenterLatitude = mapPreview.initialMapCenterLatitude,
                         initialMapCenterLongitude = mapPreview.initialMapCenterLongitude,
                         initialMapDiameterMeters = mapPreview.initialMapDiameterMeters,
