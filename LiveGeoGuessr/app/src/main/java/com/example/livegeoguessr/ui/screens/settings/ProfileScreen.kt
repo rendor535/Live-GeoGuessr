@@ -43,6 +43,7 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var showSheet by remember { mutableStateOf(false) }
+    var showNameDialog by remember { mutableStateOf(false) }
     var tempUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -142,7 +143,8 @@ fun ProfileScreen(
                 ),
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,
-                fontFamily = FontFamily.Cursive
+                fontFamily = FontFamily.Cursive,
+                modifier = Modifier.clickable { showNameDialog = true }
             )
 
             Button(
@@ -234,6 +236,40 @@ fun ProfileScreen(
                 )
             }
         }
+    }
+
+    if (showNameDialog) {
+        var newName by remember { mutableStateOf(uiState.displayName) }
+        
+        AlertDialog(
+            onDismissRequest = { showNameDialog = false },
+            title = { Text(stringResource(R.string.change_name)) },
+            text = {
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    label = { Text(stringResource(R.string.display_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.updateDisplayName(newName)
+                        viewModel.saveProfile()
+                        showNameDialog = false
+                    }
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNameDialog = false }) {
+                    Text(stringResource(R.string.cancel_retake)) // Or use a separate "Cancel" string
+                }
+            }
+        )
     }
 }
 
