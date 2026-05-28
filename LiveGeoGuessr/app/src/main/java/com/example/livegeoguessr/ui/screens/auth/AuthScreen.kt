@@ -80,9 +80,9 @@ fun AuthScreen(
             }
         )
 
-        if (uiState.error != null) {
+        if (uiState.errorResId != null) {
             Text(
-                text = uiState.error!!,
+                text = stringResource(uiState.errorResId!!),
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = 8.dp)
             )

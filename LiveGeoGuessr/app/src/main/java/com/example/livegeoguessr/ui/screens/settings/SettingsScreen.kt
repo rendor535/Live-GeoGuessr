@@ -1,52 +1,101 @@
 package com.example.livegeoguessr.ui.screens.settings
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.livegeoguessr.R
+import com.example.livegeoguessr.ui.navigation.Screen
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    navController: NavController,
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
     val darkMode by viewModel.darkMode.collectAsState()
     val useMiles by viewModel.useMiles.collectAsState()
+    val isLoggedOut by viewModel.isLoggedOut.collectAsState()
+
+    LaunchedEffect(isLoggedOut) {
+        if (isLoggedOut) {
+            navController.navigate(Screen.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top
-    ) {
-        Text(
-            text = stringResource(R.string.settings),
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
+    Scaffold(
+        containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.settings), color = MaterialTheme.colorScheme.primary) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                )
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Top
+        ) {
+            SettingsItem(
+                label = stringResource(R.string.dark_mode),
+                checked = darkMode,
+                onCheckedChange = { viewModel.updateDarkMode(it) }
+            )
 
-        SettingsItem(
-            label = stringResource(R.string.dark_mode),
-            checked = darkMode,
-            onCheckedChange = { viewModel.updateDarkMode(it) }
-        )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Color.White.copy(alpha = 0.2f))
 
-        SettingsItem(
-            label = stringResource(R.string.use_miles),
-            checked = useMiles,
-            onCheckedChange = { viewModel.updateUseMiles(it) }
-        )
+            SettingsItem(
+                label = stringResource(R.string.use_miles),
+                checked = useMiles,
+                onCheckedChange = { viewModel.updateUseMiles(it) }
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            TextButton(
+                onClick = { viewModel.logout() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(R.string.logout),
+                    color = Color.Red
+                )
+            }
+
+            TextButton(
+                onClick = { viewModel.deleteAccount() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(R.string.delete_account),
+                    color = Color.Red
+                )
+            }
+        }
     }
 }
 
@@ -63,7 +112,7 @@ fun SettingsItem(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, style = MaterialTheme.typography.bodyLarge)
+        Text(text = label, style = MaterialTheme.typography.bodyLarge, color = Color.White)
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange

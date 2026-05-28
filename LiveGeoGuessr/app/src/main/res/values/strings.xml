@@ -30,4 +30,22 @@
     <string name="use_miles">Use Miles</string>
     <string name="distance_result_miles">Distance: %1$.2f mi</string>
     <string name="login_with_google">Login with Google</string>
+    <string name="profile_settings">Profile Settings</string>
+    <string name="change_profile_picture">Change Profile Picture</string>
+    <string name="change_name">Change Name</string>
+    <string name="logout">Logout</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="save">Save</string>
+    <string name="display_name">Display Name</string>
+    <string name="choose_photo_source">Choose photo source</string>
+    <string name="gallery">Gallery</string>
+    <string name="camera">Camera</string>
+    <string name="authentication_failed">Authentication failed</string>
+    <string name="google_login_failed">Google login failed</string>
+    <string name="user_not_found">User not found</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="friends">Friends</string>
+    <string name="posts">Posts</string>
+    <string name="guesses">Guesses</string>
+    <string name="add_friend">Add friend</string>
 </resources>
