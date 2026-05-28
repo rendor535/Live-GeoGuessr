@@ -49,4 +49,7 @@
     <string name="guesses">Guesses</string>
     <string name="add_friend">Add friend</string>
     <string name="flip_camera">Flip Camera</string>
+    <string name="gps_required_message">GPS is turned off. Please turn it on to tag your photo.</string>
+    <string name="turn_on_gps">Turn on GPS</string>
+    <string name="refresh_status">I turned it on</string>
 </resources>

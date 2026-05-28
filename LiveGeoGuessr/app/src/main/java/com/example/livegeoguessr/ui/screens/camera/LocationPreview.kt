@@ -2,6 +2,10 @@ package com.example.livegeoguessr.ui.screens.camera
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.location.LocationManager
+import android.provider.Settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -9,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.livegeoguessr.R
 import androidx.compose.ui.viewinterop.AndroidView
@@ -16,6 +21,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -54,20 +60,82 @@ private fun LocationMapContent(
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     var location by remember { mutableStateOf<LatLng?>(null) }
+    
+    val locationManager = remember { context.getSystemService(Context.LOCATION_SERVICE) as LocationManager }
+    var isGpsEnabled by remember { 
+        mutableStateOf(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) 
+    }
+
+    val checkGpsStatus = {
+        isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    }
 
     LaunchedEffect(Unit) {
-        fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
-            loc?.let {
-                val latLng = LatLng(it.latitude, it.longitude)
-                location = latLng
-                onLocationAcquired(latLng)
+        checkGpsStatus()
+    }
+
+    LaunchedEffect(isGpsEnabled) {
+        if (isGpsEnabled) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                if (loc != null) {
+                    val latLng = LatLng(loc.latitude, loc.longitude)
+                    location = latLng
+                    onLocationAcquired(latLng)
+                } else {
+                    fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                        .addOnSuccessListener { currentLoc ->
+                            currentLoc?.let {
+                                val latLng = LatLng(it.latitude, it.longitude)
+                                location = latLng
+                                onLocationAcquired(latLng)
+                            }
+                        }
+                }
             }
         }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (location == null) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        if (!isGpsEnabled) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.gps_required_message),
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = {
+                        context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                    },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                ) {
+                    Text(stringResource(R.string.turn_on_gps))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(onClick = { checkGpsStatus() }) {
+                    Text(stringResource(R.string.refresh_status))
+                }
+            }
+        } else if (location == null) {
+            Column(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Acquiring location...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         } else {
             val geoPoint = remember(location) { GeoPoint(location!!.latitude, location!!.longitude) }
             
