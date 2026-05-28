@@ -48,4 +48,5 @@
     <string name="posts">Posts</string>
     <string name="guesses">Guesses</string>
     <string name="add_friend">Add friend</string>
+    <string name="flip_camera">Flip Camera</string>
 </resources>
