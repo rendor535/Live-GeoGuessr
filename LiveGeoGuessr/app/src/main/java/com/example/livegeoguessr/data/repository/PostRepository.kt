@@ -4,10 +4,13 @@ import com.example.livegeoguessr.factory.PostFactory
 import android.graphics.Bitmap
 import com.example.livegeoguessr.domain.model.Post
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,18 +26,17 @@ class PostRepository @Inject constructor(
         return try {
             val snapshot = firestore
                 .collection("posts")
+                .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .await()
 
-            snapshot.documents.mapNotNull { document ->
+            snapshot.documents.mapNotNull { document: DocumentSnapshot ->
                 PostFactory.fromDocument(document)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList()
+            throw e
         }
     }
-
     suspend fun addPost(
         bitmap: Bitmap,
         latitude: Double,
@@ -51,7 +53,9 @@ class PostRepository @Inject constructor(
         val postDocument = firestore.collection("posts").document()
         val postId = postDocument.id
 
-        val imageBytes = bitmap.toJpegByteArray()
+        val imageBytes = withContext(Dispatchers.Default) {
+            bitmap.toJpegByteArray()
+        }
 
         val imageRef = storage.reference
             .child("posts/$userId/$postId.jpg")
@@ -78,10 +82,10 @@ class PostRepository @Inject constructor(
             longitude = longitude
         )
     }
-
     private fun Bitmap.toJpegByteArray(): ByteArray {
         val outputStream = ByteArrayOutputStream()
         compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
         return outputStream.toByteArray()
     }
 }
+

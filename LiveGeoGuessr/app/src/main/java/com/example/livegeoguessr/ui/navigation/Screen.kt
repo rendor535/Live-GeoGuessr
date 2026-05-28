@@ -12,10 +12,17 @@ sealed class Screen(val route: String, val icon: ImageVector) {
     object Settings : Screen("settings", Icons.Default.Settings)
     object Profile : Screen("profile", Icons.Default.Person)
     object Login : Screen("login", Icons.Default.Person)
-    object Guess : Screen("guess/{imageUrl}/{lat}/{lon}", Icons.Default.Home) {
-        fun createRoute(imageUrl: String, lat: Double, lon: Double): String {
+    object Guess : Screen("guess/{postId}/{imageUrl}/{lat}/{lon}", Icons.Default.Home) {
+        fun createRoute(
+            postId: String,
+            imageUrl: String,
+            lat: Double,
+            lon: Double
+        ): String {
+            val encodedPostId = java.net.URLEncoder.encode(postId, "UTF-8")
             val encodedUrl = java.net.URLEncoder.encode(imageUrl, "UTF-8")
-            return "guess/$encodedUrl/$lat/$lon"
+
+            return "guess/$encodedPostId/$encodedUrl/$lat/$lon"
         }
     }
 }
