@@ -22,12 +22,29 @@ class HomeViewModel @Inject constructor(
     }
     fun loadPosts() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            val posts = postRepository.getPosts()
-                _uiState.update {
-                    it.copy(posts = posts, isLoading = false)
-                }
+            _uiState.update {
+                it.copy(isLoading = true, error = null)
+            }
 
+            try {
+                val posts = postRepository.getPosts()
+
+                _uiState.update {
+                    it.copy(
+                        posts = posts,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Nie udało się pobrać postów"
+                    )
+                }
+            }
         }
     }
 }

@@ -16,12 +16,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.FlipCameraAndroid
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -44,6 +48,7 @@ fun CameraPreview(
     val previewView = remember { PreviewView(context) }
     val executor = remember(context) { ContextCompat.getMainExecutor(context) }
     val imageCapture = remember { ImageCapture.Builder().build() }
+    var cameraSelector by remember { mutableStateOf(CameraSelector.DEFAULT_BACK_CAMERA) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -57,13 +62,11 @@ fun CameraPreview(
         }
     }
 
-    LaunchedEffect(cameraProviderFuture) {
+    LaunchedEffect(cameraProviderFuture, cameraSelector) {
         val cameraProvider = cameraProviderFuture.get()
         val preview = Preview.Builder().build().also {
             it.surfaceProvider = previewView.surfaceProvider
         }
-
-        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
         try {
             cameraProvider.unbindAll()
@@ -97,6 +100,27 @@ fun CameraPreview(
                 imageVector = Icons.Default.Camera,
                 contentDescription = stringResource(R.string.take_photo),
                 modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        IconButton(
+            onClick = {
+                cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+                } else {
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 24.dp, end = 24.dp)
+                .size(48.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.FlipCameraAndroid,
+                contentDescription = stringResource(R.string.flip_camera),
+                modifier = Modifier.fillMaxSize(),
+                tint = androidx.compose.ui.graphics.Color.White
             )
         }
     }

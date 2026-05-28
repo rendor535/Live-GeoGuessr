@@ -49,10 +49,13 @@ fun AppNavGraph(
             )
         }
         composable(Screen.Guess.route) { backStackEntry ->
+            val postId = backStackEntry.arguments?.getString("postId") ?: ""
             val imageUrl = backStackEntry.arguments?.getString("imageUrl") ?: ""
-            val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
-            val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0
-            GuessScreen(imageUrl, lat, lon)
+
+            GuessScreen(
+                postId = postId,
+                imageUrl = imageUrl,
+            )
         }
     }
 }

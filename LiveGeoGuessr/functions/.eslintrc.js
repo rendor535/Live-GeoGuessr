@@ -27,7 +27,12 @@ module.exports = {
   ],
   rules: {
     "quotes": ["error", "double"],
+    "semi": ["error", "always"],
     "import/no-unresolved": 0,
-    "indent": ["error", 2],
+
+    "indent": "off",
+    "require-jsdoc": "off",
+    "linebreak-style": "off",
+    "quote-props": "off",
   },
 };

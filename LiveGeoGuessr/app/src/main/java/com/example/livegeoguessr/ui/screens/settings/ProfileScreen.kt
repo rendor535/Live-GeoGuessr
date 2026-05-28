@@ -44,6 +44,7 @@ fun ProfileScreen(
     val context = LocalContext.current
     var showSheet by remember { mutableStateOf(false) }
     var showAddFriendDialog by remember { mutableStateOf(false) }
+    var showNameDialog by remember { mutableStateOf(false) }
     var tempUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -134,21 +135,35 @@ fun ProfileScreen(
 
             Text(
                 text = uiState.displayName,
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    shadow = androidx.compose.ui.graphics.Shadow(
+                        color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.3f),
+                        offset = androidx.compose.ui.geometry.Offset(2f, 2f),
+                        blurRadius = 4f
+                    )
+                ),
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.primary,
-                fontFamily = FontFamily.Cursive // Stylized font
+                fontFamily = FontFamily.Cursive,
+                modifier = Modifier.clickable { showNameDialog = true }
             )
 
-            Text(
-                text = stringResource(R.string.add_friend),
-                color = MaterialTheme.colorScheme.secondary,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier
-                    .padding(top = 4.dp)
-                    .clickable { showAddFriendDialog = true }
-            )
+            Button(
+                onClick = { /* TODO */ },
+                modifier = Modifier.padding(top = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Group, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.add_friend),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -233,6 +248,40 @@ fun ProfileScreen(
                 )
             }
         }
+    }
+
+    if (showNameDialog) {
+        var newName by remember { mutableStateOf(uiState.displayName) }
+        
+        AlertDialog(
+            onDismissRequest = { showNameDialog = false },
+            title = { Text(stringResource(R.string.change_name)) },
+            text = {
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    label = { Text(stringResource(R.string.display_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.updateDisplayName(newName)
+                        viewModel.saveProfile()
+                        showNameDialog = false
+                    }
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNameDialog = false }) {
+                    Text(stringResource(R.string.cancel_retake)) // Or use a separate "Cancel" string
+                }
+            }
+        )
     }
 }
 
