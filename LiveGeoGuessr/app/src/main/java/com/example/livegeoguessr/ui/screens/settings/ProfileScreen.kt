@@ -43,6 +43,7 @@ fun ProfileScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var showSheet by remember { mutableStateOf(false) }
+    var showAddFriendDialog by remember { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
     var tempUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
@@ -170,7 +171,8 @@ fun ProfileScreen(
             ProfileStatsCard(
                 icon = Icons.Default.Group,
                 label = stringResource(R.string.friends),
-                value = uiState.friendsCount.toString()
+                value = uiState.friendsCount.toString(),
+                onClick = { navController.navigate(Screen.Friends.route) }
             )
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -189,6 +191,16 @@ fun ProfileScreen(
                 value = uiState.guessesCount.toString()
             )
         }
+    }
+
+    if (showAddFriendDialog) {
+        AddFriendDialog(
+            onDismiss = { showAddFriendDialog = false },
+            onAddFriend = { username ->
+                // Mock adding friend
+                showAddFriendDialog = false
+            }
+        )
     }
 
     if (showSheet) {
@@ -274,15 +286,74 @@ fun ProfileScreen(
 }
 
 @Composable
+fun AddFriendDialog(
+    onDismiss: () -> Unit,
+    onAddFriend: (String) -> Unit
+) {
+    var username by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.add_friend),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(R.string.enter_friend_username),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text(stringResource(R.string.username)) },
+                    placeholder = { Text(stringResource(R.string.username_placeholder)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    )
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onAddFriend(username) },
+                enabled = username.isNotBlank(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(stringResource(R.string.send_request))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(28.dp)
+    )
+}
+
+@Composable
 fun ProfileStatsCard(
     icon: ImageVector,
     label: String,
-    value: String
+    value: String,
+    onClick: () -> Unit = {}
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp),
+            .height(72.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
