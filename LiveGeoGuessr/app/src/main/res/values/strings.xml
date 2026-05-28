@@ -48,4 +48,12 @@
     <string name="posts">Posts</string>
     <string name="guesses">Guesses</string>
     <string name="add_friend">Add friend</string>
+    <string name="online">Online</string>
+    <string name="offline">Offline</string>
+    <string name="points_suffix">%1$d pts</string>
+    <string name="enter_friend_username">Enter your friend\'s username to send a request.</string>
+    <string name="username">Username</string>
+    <string name="username_placeholder">e.g. Explorer123</string>
+    <string name="send_request">Send Request</string>
+    <string name="cancel">Cancel</string>
 </resources>

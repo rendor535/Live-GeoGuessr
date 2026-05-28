@@ -108,7 +108,7 @@ fun FriendItem(friend: FriendUI) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = if (friend.isOnline) "Online" else "Offline",
+                    text = if (friend.isOnline) stringResource(R.string.online) else stringResource(R.string.offline),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
@@ -119,7 +119,7 @@ fun FriendItem(friend: FriendUI) {
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = "${friend.points} pts",
+                    text = stringResource(R.string.points_suffix, friend.points),
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
