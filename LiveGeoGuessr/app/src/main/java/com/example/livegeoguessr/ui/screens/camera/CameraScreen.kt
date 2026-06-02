@@ -2,23 +2,20 @@ package com.example.livegeoguessr.ui.screens.camera
 
 import android.Manifest
 import android.graphics.Bitmap
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -78,6 +75,15 @@ private fun CameraContent(
 
     val uploadState by viewModel.uploadState.collectAsState()
 
+    BackHandler(enabled = capturedBitmap != null) {
+        if (isPhotoConfirmed) {
+            isPhotoConfirmed = false
+            location = null
+        } else {
+            capturedBitmap = null
+        }
+    }
+
     LaunchedEffect(uploadState.isUploaded) {
         if (uploadState.isUploaded) {
             capturedBitmap = null
@@ -115,30 +121,44 @@ private fun CameraContent(
             }
         }
 
-        if (capturedBitmap != null) {
-            FilledIconButton(
-                onClick = {
+        // Close / Back Button (Always Visible)
+        FilledIconButton(
+            onClick = {
+                if (capturedBitmap == null) {
+                    // Navigate back or just reset? 
+                    // Since it's a tab, maybe we don't need a back button in CameraPreview 
+                    // unless it's a separate screen. 
+                    // But if the user says "always visible", I'll provide a Close/Back action.
+                    // For now, if capturedBitmap is null, let's assume it does nothing 
+                    // or we could use it to reset.
+                    // Actually, if we are in a tab, we probably don't want a Close button 
+                    // that exits the app.
+                } else {
                     capturedBitmap = null
                     isPhotoConfirmed = false
                     location = null
                     viewModel.resetUploadState()
-                },
-                enabled = !uploadState.isUploading,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(R.string.cancel_retake),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp)
+                .size(56.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
+            enabled = capturedBitmap != null && !uploadState.isUploading
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = stringResource(R.string.cancel_retake),
+                modifier = Modifier.size(28.dp)
+            )
+        }
 
+        // Main Action Button (Next / Send)
+        if (capturedBitmap != null) {
             FilledIconButton(
                 onClick = {
                     if (!isPhotoConfirmed) {
@@ -157,9 +177,9 @@ private fun CameraContent(
                 },
                 enabled = !uploadState.isUploading && (!isPhotoConfirmed || location != null),
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(32.dp)
-                    .size(72.dp),
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 32.dp)
+                    .size(80.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -167,7 +187,7 @@ private fun CameraContent(
             ) {
                 if (uploadState.isUploading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(36.dp),
+                        modifier = Modifier.size(40.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 3.dp
                     )
@@ -183,20 +203,22 @@ private fun CameraContent(
                         } else {
                             stringResource(R.string.confirm_photo)
                         },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(40.dp)
                     )
                 }
             }
+        }
 
-            uploadState.errorMessage?.let { message ->
-                Text(
-                    text = message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp)
-                )
-            }
+        uploadState.errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 120.dp, start = 16.dp, end = 16.dp)
+                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            )
         }
     }
 }

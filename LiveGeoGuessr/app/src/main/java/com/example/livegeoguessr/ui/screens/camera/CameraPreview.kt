@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.FlipCameraAndroid
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -87,23 +89,26 @@ fun CameraPreview(
             modifier = Modifier.fillMaxSize()
         )
 
-        IconButton(
+        FilledIconButton(
             onClick = {
                 takePhoto(imageCapture, executor, onPhotoCaptured)
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
-                .size(72.dp)
+                .padding(bottom = 20.dp)
+                .size(80.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
         ) {
             Icon(
                 imageVector = Icons.Default.Camera,
                 contentDescription = stringResource(R.string.take_photo),
-                modifier = Modifier.fillMaxSize()
-            )
+                modifier = Modifier.size(70.dp))
         }
 
-        IconButton(
+        FilledIconButton(
             onClick = {
                 cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
                     CameraSelector.DEFAULT_FRONT_CAMERA
@@ -113,14 +118,17 @@ fun CameraPreview(
             },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 24.dp, end = 24.dp)
-                .size(48.dp)
+                .padding(bottom = 32.dp, end = 32.dp)
+                .size(56.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
         ) {
             Icon(
                 imageVector = Icons.Default.FlipCameraAndroid,
                 contentDescription = stringResource(R.string.flip_camera),
-                modifier = Modifier.fillMaxSize(),
-                tint = androidx.compose.ui.graphics.Color.White
+                modifier = Modifier.size(32.dp)
             )
         }
     }
