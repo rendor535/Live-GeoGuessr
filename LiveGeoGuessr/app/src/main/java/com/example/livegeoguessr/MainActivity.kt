@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -14,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -39,16 +41,24 @@ class MainActivity : ComponentActivity() {
             LiveGeoGuessrTheme(darkTheme = darkMode) {
                 if (isLoggedIn != null) {
                     Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background)
                     ) {
+                        val backgroundRes = if (darkMode) R.drawable.app_background_dark else R.drawable.app_background
+
                         Image(
-                            painter = painterResource(id = R.drawable.app_background),
+                            painter = painterResource(id = backgroundRes),
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
-                            alpha = 1.0f,
-
+                            alpha = 0.6f,
+                            colorFilter = ColorFilter.tint(
+                                MaterialTheme.colorScheme.scrim.copy(alpha = 0.3f),
+                                androidx.compose.ui.graphics.BlendMode.Darken
+                            )
                         )
-                        MainScreen(isLoggedIn!!)
+                        MainScreen(isLoggedIn!!, darkMode)
                     }
                 }
             }
@@ -57,13 +67,17 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen(isLoggedIn: Boolean) {
+fun MainScreen(isLoggedIn: Boolean, darkMode: Boolean) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.7f),
+        containerColor = if (darkMode) {
+            MaterialTheme.colorScheme.background.copy(alpha = 0.2f)
+        } else {
+            MaterialTheme.colorScheme.background.copy(alpha = 0.4f)
+        },
         bottomBar = {
             if (currentRoute != Screen.Login.route) {
                 BottomBar(navController)
