@@ -90,6 +90,7 @@ fun PostItem(post: Post, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal=16.dp, vertical = 4.dp)
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
@@ -100,13 +101,13 @@ fun PostItem(post: Post, onClick: () -> Unit) {
         Column {
             Row(
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(8.dp)
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(32.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary)
                 ) {
@@ -133,7 +134,7 @@ fun PostItem(post: Post, onClick: () -> Unit) {
                 contentDescription = stringResource(R.string.post_image_description),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(350.dp)
+                    .height(160.dp)
                     .clip(androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
                 contentScale = ContentScale.Crop
             )
