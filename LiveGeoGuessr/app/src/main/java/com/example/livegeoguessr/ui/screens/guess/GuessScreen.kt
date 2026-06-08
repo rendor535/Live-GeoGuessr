@@ -189,7 +189,7 @@ fun GuessScreen(
                         }
 
                         Text(
-                            text = "Zdobyto ${result.points} pkt",
+                            text = stringResource(R.string.scored_points, result.points),
                             style = MaterialTheme.typography.headlineSmall,
                             color = Color.Black
                         )
