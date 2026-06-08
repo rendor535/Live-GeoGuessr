@@ -117,6 +117,7 @@ fun PostItem(post: Post, onClick: () -> Unit) {
                         color = MaterialTheme.colorScheme.onPrimary,
                         style = MaterialTheme.typography.titleMedium
                     )
+
                 }
                 
                 Spacer(modifier = Modifier.width(12.dp))
