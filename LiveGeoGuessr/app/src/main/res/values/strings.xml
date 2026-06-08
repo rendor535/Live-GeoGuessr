@@ -49,7 +49,7 @@
     <string name="friends">Friends</string>
     <string name="posts">Posts</string>
     <string name="guesses">Guesses</string>
-    <string name="add_friend">Add friend</string>
+    <string name="add_a_friend">Add a friend</string>
     <string name="online">Online</string>
     <string name="offline">Offline</string>
     <string name="points_suffix">%1$d pts</string>

@@ -29,6 +29,9 @@ import androidx.compose.material3.MaterialTheme
 
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.zIndex
+
 @Composable
 fun GuessScreen(
     postId: String,
@@ -79,89 +82,75 @@ fun GuessScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (isImageFullScreen) {
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = stringResource(R.string.full_screen_image),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black)
-                    .clickable { isImageFullScreen = false },
-                contentScale = ContentScale.Fit
-            )
-
-            Card(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-                    .size(150.dp)
-                    .clickable { isImageFullScreen = false },
-                elevation = CardDefaults.cardElevation(8.dp),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                MapViewContainer(
-                    guessedLocation = guessedLocation,
-                    modifier = Modifier.fillMaxSize(),
-                    targetLocation = targetLocation,
-                    showResult = guessUiState.result != null,
-                    initialCenter = initialCenter,
-                    initialMapDiameterMeters = guessUiState.initialMapDiameterMeters,
-                    onLocationSelected = null
-                )
-            }
+        // Map Component
+        val mapModifier = if (isImageFullScreen) {
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .size(150.dp)
+                .zIndex(2f)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { isImageFullScreen = false }
         } else {
-            MapViewContainer(
-                guessedLocation = guessedLocation,
-                targetLocation = targetLocation,
-                showResult = guessUiState.result != null,
-                initialCenter = initialCenter,
-                initialMapDiameterMeters = guessUiState.initialMapDiameterMeters,
-                onLocationSelected = {
-                    viewModel.selectLocation(
-                        latitude = it.latitude,
-                        longitude = it.longitude
-                    )
-                },
-                modifier = Modifier.fillMaxSize()
-            )
+            Modifier
+                .fillMaxSize()
+                .zIndex(1f)
+        }
 
-
-            Card(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-                    .size(150.dp)
-                    .clickable { isImageFullScreen = true },
-                elevation = CardDefaults.cardElevation(8.dp),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = stringResource(R.string.preview_image),
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+        MapViewContainer(
+            guessedLocation = guessedLocation,
+            targetLocation = targetLocation,
+            showResult = guessUiState.result != null,
+            initialCenter = initialCenter,
+            initialMapDiameterMeters = guessUiState.initialMapDiameterMeters,
+            onLocationSelected = {
+                viewModel.selectLocation(
+                    latitude = it.latitude,
+                    longitude = it.longitude
                 )
-            }
+            },
+            isInteractable = !isImageFullScreen,
+            onClick = { if (isImageFullScreen) isImageFullScreen = false },
+            modifier = mapModifier
+        )
 
-            if (
-                guessedLocation != null &&
-                guessUiState.result == null
-            ) {
+        // Image Component
+        val imageModifier = if (isImageFullScreen) {
+            Modifier
+                .fillMaxSize()
+                .zIndex(1f)
+                .background(Color.Black)
+                .clickable { isImageFullScreen = false }
+        } else {
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .size(150.dp)
+                .zIndex(2f)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { isImageFullScreen = true }
+        }
+
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = if (isImageFullScreen) stringResource(R.string.full_screen_image) else stringResource(R.string.preview_image),
+            modifier = imageModifier,
+            contentScale = if (isImageFullScreen) ContentScale.Fit else ContentScale.Crop
+        )
+
+        // UI Overlays (only visible when map is main view or showing result)
+        if (!isImageFullScreen) {
+            if (guessedLocation != null && guessUiState.result == null) {
                 Button(
-                    onClick = {
-                        viewModel.submitGuess(postId)
-                    },
+                    onClick = { viewModel.submitGuess(postId) },
                     enabled = !guessUiState.isSubmitting,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 32.dp)
+                        .zIndex(3f)
                 ) {
                     Text(
-                        text = if (guessUiState.isSubmitting) {
-                            "Wysyłanie..."
-                        } else {
-                            stringResource(R.string.confirm_guess)
-                        }
+                        text = if (guessUiState.isSubmitting) "Wysyłanie..." else stringResource(R.string.confirm_guess)
                     )
                 }
             }
@@ -170,32 +159,22 @@ fun GuessScreen(
                 Card(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(16.dp),
+                        .padding(16.dp)
+                        .zIndex(3f),
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White.copy(alpha = 0.9f)
                     )
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        val distance = if (useMiles) {
-                            (result.distanceMeters / 1000) * 0.621371
-                        } else {
-                            result.distanceMeters / 1000
-                        }
-
-                        val unitResId = if (useMiles) {
-                            R.string.distance_result_miles
-                        } else {
-                            R.string.distance_result
-                        }
+                        val distance = if (useMiles) (result.distanceMeters / 1000) * 0.621371 else result.distanceMeters / 1000
+                        val unitResId = if (useMiles) R.string.distance_result_miles else R.string.distance_result
 
                         Text(
                             text = stringResource(R.string.scored_points, result.points),
                             style = MaterialTheme.typography.headlineSmall,
                             color = Color.Black
                         )
-
                         Spacer(modifier = Modifier.height(8.dp))
-
                         Text(
                             text = stringResource(unitResId, distance),
                             style = MaterialTheme.typography.bodyLarge,
@@ -209,16 +188,11 @@ fun GuessScreen(
                 Card(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White.copy(alpha = 0.9f)
-                    )
+                        .padding(16.dp)
+                        .zIndex(3f),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
                 ) {
-                    Text(
-                        text = error,
-                        modifier = Modifier.padding(16.dp),
-                        color = Color.Black
-                    )
+                    Text(text = error, modifier = Modifier.padding(16.dp), color = Color.Black)
                 }
             }
         }
@@ -233,91 +207,100 @@ fun MapViewContainer(
     showResult: Boolean = false,
     initialCenter: GeoPoint? = null,
     initialMapDiameterMeters: Double? = null,
-    onLocationSelected: ((GeoPoint) -> Unit)? = null
+    onLocationSelected: ((GeoPoint) -> Unit)? = null,
+    isInteractable: Boolean = true,
+    onClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val yourGuessTitle = stringResource(R.string.your_guess)
     val actualLocationTitle = stringResource(R.string.actual_location)
+    
     val mapView = remember { MapView(context) }
-    val guessMarker = remember { Marker(mapView).apply { title = yourGuessTitle } }
-    val targetMarker = remember { Marker(mapView).apply { title = actualLocationTitle } }
-    val connectionLine = remember { Polyline().apply { 
+    
+    val guessMarker = remember(mapView) { Marker(mapView) }
+    val targetMarker = remember(mapView) { Marker(mapView) }
+    val connectionLine = remember(mapView) { Polyline().apply { 
         outlinePaint.color = android.graphics.Color.RED
         outlinePaint.strokeWidth = 5f
     } }
+
+    val updatedOnLocationSelected by rememberUpdatedState(onLocationSelected)
+
+    var hasSetInitialCamera by remember(initialCenter, initialMapDiameterMeters) { mutableStateOf(false) }
     var hasZoomedToResult by remember(guessedLocation, targetLocation, showResult) { mutableStateOf(false) }
-    var hasSetInitialCamera by remember(initialCenter, initialMapDiameterMeters) {
-        mutableStateOf(false)
+
+    LaunchedEffect(mapView, isInteractable) {
+        mapView.setMultiTouchControls(isInteractable)
     }
-    AndroidView(
-        factory = {
-            mapView.apply {
-                setMultiTouchControls(true)
 
-                controller.setZoom(5.0)
-                controller.setCenter(GeoPoint(52.0, 19.0))
-
-                val eventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
-                    override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
-                        onLocationSelected?.invoke(p)
-                        return true
-                    }
-
-                    override fun longPressHelper(p: GeoPoint): Boolean = false
-                })
-                overlays.add(eventsOverlay)
-            }
-        },
-        modifier = modifier,
-        update = { view ->
-            guessMarker.title = yourGuessTitle
-            targetMarker.title = actualLocationTitle
-
-            if (
-                !hasSetInitialCamera &&
-                !showResult &&
-                initialCenter != null &&
-                initialMapDiameterMeters != null
-            ) {
-                val boundingBox = createBoundingBoxAround(
-                    center = initialCenter,
-                    diameterMeters = initialMapDiameterMeters
-                )
-
-                view.zoomToBoundingBox(boundingBox, true, 150)
-                hasSetInitialCamera = true
-            }
-
-
-            if (guessedLocation != null) {
-                guessMarker.position = guessedLocation
-                if (!view.overlays.contains(guessMarker)) {
-                    view.overlays.add(guessMarker)
-                }
-            }
-
-            if (showResult && targetLocation != null && guessedLocation != null) {
-                targetMarker.position = targetLocation
-                if (!view.overlays.contains(targetMarker)) {
-                    view.overlays.add(targetMarker)
-                }
-
-                connectionLine.setPoints(listOf(guessedLocation, targetLocation))
-                if (!view.overlays.contains(connectionLine)) {
-                    view.overlays.add(connectionLine)
-                }
-                
-                // Zoom to show both points only once
-                if (!hasZoomedToResult) {
-                    val boundingBox = org.osmdroid.util.BoundingBox.fromGeoPoints(listOf(guessedLocation, targetLocation))
-                    view.zoomToBoundingBox(boundingBox, true, 150)
-                    hasZoomedToResult = true
-                }
-            }
-            view.invalidate()
+    LaunchedEffect(mapView, initialCenter, initialMapDiameterMeters, hasSetInitialCamera, showResult) {
+        if (!hasSetInitialCamera && !showResult && initialCenter != null && initialMapDiameterMeters != null) {
+            val boundingBox = createBoundingBoxAround(initialCenter, initialMapDiameterMeters)
+            mapView.zoomToBoundingBox(boundingBox, true, 150)
+            hasSetInitialCamera = true
         }
-    )
+    }
+
+    LaunchedEffect(mapView, guessedLocation, targetLocation, showResult, hasZoomedToResult) {
+        if (showResult && targetLocation != null && guessedLocation != null && !hasZoomedToResult) {
+            val boundingBox = org.osmdroid.util.BoundingBox.fromGeoPoints(listOf(guessedLocation, targetLocation))
+            mapView.zoomToBoundingBox(boundingBox, true, 150)
+            hasZoomedToResult = true
+        }
+    }
+
+    Box(modifier = modifier) {
+        AndroidView(
+            factory = {
+                mapView.apply {
+                    controller.setZoom(5.0)
+                    controller.setCenter(GeoPoint(52.0, 19.0))
+
+                    val eventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
+                        override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
+                            if (isInteractable) {
+                                updatedOnLocationSelected?.invoke(p)
+                            }
+                            return true
+                        }
+                        override fun longPressHelper(p: GeoPoint): Boolean = false
+                    })
+                    overlays.add(eventsOverlay)
+                }
+            },
+            modifier = Modifier.fillMaxSize(),
+            update = { view ->
+                guessMarker.title = yourGuessTitle
+                targetMarker.title = actualLocationTitle
+
+                if (guessedLocation != null) {
+                    guessMarker.position = guessedLocation
+                    if (!view.overlays.contains(guessMarker)) view.overlays.add(guessMarker)
+                }
+
+                if (showResult && targetLocation != null && guessedLocation != null) {
+                    targetMarker.position = targetLocation
+                    if (!view.overlays.contains(targetMarker)) view.overlays.add(targetMarker)
+
+                    connectionLine.setPoints(listOf(guessedLocation, targetLocation))
+                    if (!view.overlays.contains(connectionLine)) view.overlays.add(connectionLine)
+                }
+                view.invalidate()
+            }
+        )
+
+        // Overlay to block interaction and handle clicks when map is small
+        if (!isInteractable) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Transparent)
+                    .clickable(onClick = { onClick?.invoke() })
+            )
+        }
+    }
 }
+
 
 private fun createBoundingBoxAround(
     center: GeoPoint,
