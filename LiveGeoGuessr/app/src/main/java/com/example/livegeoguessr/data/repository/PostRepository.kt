@@ -24,19 +24,68 @@ class PostRepository @Inject constructor(
 
     suspend fun getPosts(): List<Post> {
         return try {
-            val snapshot = firestore
-                .collection("posts")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
-                .get()
-                .await()
+            val friendUids = getFriendUids()
 
-            snapshot.documents.mapNotNull { document: DocumentSnapshot ->
-                PostFactory.fromDocument(document)
+            android.util.Log.d("PostRepository", "Current user: ${auth.currentUser?.uid}")
+            android.util.Log.d("PostRepository", "Friend UIDs: $friendUids")
+
+            if (friendUids.isEmpty()) {
+                android.util.Log.d("PostRepository", "No friends found")
+                return emptyList()
             }
+
+            val postsFromFriends = mutableListOf<Post>()
+
+            friendUids.chunked(30).forEach { uidChunk ->
+                android.util.Log.d("PostRepository", "Query posts where userId in: $uidChunk")
+
+                val snapshot = firestore
+                    .collection("posts")
+                    .whereIn("userId", uidChunk)
+                    .get()
+                    .await()
+
+                android.util.Log.d("PostRepository", "Posts found in chunk: ${snapshot.size()}")
+
+                snapshot.documents.forEach { document ->
+                    android.util.Log.d(
+                        "PostRepository",
+                        "Post ${document.id}: userId=${document.getString("userId")}, user=${document.getString("user")}"
+                    )
+                }
+
+                val posts = snapshot.documents.mapNotNull { document: DocumentSnapshot ->
+                    PostFactory.fromDocument(document)
+                }
+
+                postsFromFriends.addAll(posts)
+            }
+
+            android.util.Log.d("PostRepository", "Total posts from friends: ${postsFromFriends.size}")
+
+            postsFromFriends
         } catch (e: Exception) {
+            android.util.Log.e("PostRepository", "Error loading friend posts", e)
             throw e
         }
     }
+
+    private suspend fun getFriendUids(): List<String> {
+        val currentUser = auth.currentUser
+            ?: throw IllegalStateException("User is not logged in")
+
+        val snapshot = firestore
+            .collection("users")
+            .document(currentUser.uid)
+            .collection("friends")
+            .get()
+            .await()
+
+        return snapshot.documents.map { document ->
+            document.id
+        }
+    }
+
     suspend fun addPost(
         bitmap: Bitmap,
         latitude: Double,
@@ -88,4 +137,3 @@ class PostRepository @Inject constructor(
         return outputStream.toByteArray()
     }
 }
-

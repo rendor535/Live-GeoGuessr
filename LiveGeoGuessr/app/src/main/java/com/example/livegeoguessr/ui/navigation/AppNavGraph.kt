@@ -12,7 +12,7 @@ import com.example.livegeoguessr.ui.screens.settings.SettingsScreen
 import com.example.livegeoguessr.ui.screens.settings.ProfileScreen
 import com.example.livegeoguessr.ui.screens.guess.GuessScreen
 import com.example.livegeoguessr.ui.screens.friends.FriendsScreen
-
+import com.example.livegeoguessr.ui.screens.friends.AddFriendScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
@@ -38,6 +38,9 @@ fun AppNavGraph(
         }
         composable(Screen.Friends.route) {
             FriendsScreen(navController = navController)
+        }
+        composable(Screen.AddFriend.route) {
+            AddFriendScreen(navController)
         }
         composable (Screen.Login.route) {
             AuthScreen(

@@ -10,6 +10,316 @@ const db = admin.firestore();
 
 type GameModeType = "CITY";
 
+function getFriendRequestId(uidA: string, uidB: string): string {
+  return [uidA, uidB].sort().join("_");
+}
+
+async function getUserPublicData(uid: string) {
+  const userSnap = await db.collection("users").doc(uid).get();
+
+  if (!userSnap.exists) {
+    throw new HttpsError("not-found", "User not found");
+  }
+
+  const data = userSnap.data() || {};
+
+  return {
+    uid,
+    nickname: data.nickname || data.displayName || "Player",
+    displayName: data.displayName || data.nickname || "Player",
+    photoUrl: data.photoUrl || null,
+  };
+}
+export const sendFriendRequest = onCall(async (request) => {
+  const fromUid = request.auth?.uid;
+
+  if (!fromUid) {
+    throw new HttpsError("unauthenticated", "User must be logged in");
+  }
+
+  const toUid = String(request.data?.toUid || "");
+
+  if (!toUid) {
+    throw new HttpsError("invalid-argument", "Missing toUid");
+  }
+
+  if (fromUid === toUid) {
+    throw new HttpsError("invalid-argument", "Cannot add yourself");
+  }
+
+  const requestId = getFriendRequestId(fromUid, toUid);
+  const requestRef = db.collection("friendRequests").doc(requestId);
+
+  const fromUser = await getUserPublicData(fromUid);
+  const toUser = await getUserPublicData(toUid);
+
+  await db.runTransaction(async (transaction) => {
+    const requestSnap = await transaction.get(requestRef);
+
+    if (requestSnap.exists) {
+      const existing = requestSnap.data();
+
+      if (existing?.status === "pending") {
+        throw new HttpsError("already-exists", "Friend request already exists");
+      }
+
+      if (existing?.status === "accepted") {
+        throw new HttpsError("already-exists", "Users are already friends");
+      }
+    }
+
+    const fromFriendRef = db
+      .collection("users")
+      .doc(fromUid)
+      .collection("friends")
+      .doc(toUid);
+
+    const fromFriendSnap = await transaction.get(fromFriendRef);
+
+    if (fromFriendSnap.exists) {
+      throw new HttpsError("already-exists", "Users are already friends");
+    }
+
+    transaction.set(requestRef, {
+      fromUid,
+      toUid,
+      fromNickname: fromUser.nickname,
+      fromDisplayName: fromUser.displayName,
+      fromPhotoUrl: fromUser.photoUrl,
+      toNickname: toUser.nickname,
+      toDisplayName: toUser.displayName,
+      toPhotoUrl: toUser.photoUrl,
+      status: "pending",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+
+  return {
+    success: true,
+    requestId,
+  };
+});
+
+export const acceptFriendRequest = onCall(async (request) => {
+  const uid = request.auth?.uid;
+
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "User must be logged in");
+  }
+
+  const requestId = String(request.data?.requestId || "");
+
+  if (!requestId) {
+    throw new HttpsError("invalid-argument", "Missing requestId");
+  }
+
+  const requestRef = db.collection("friendRequests").doc(requestId);
+
+  await db.runTransaction(async (transaction) => {
+    const requestSnap = await transaction.get(requestRef);
+
+    if (!requestSnap.exists) {
+      throw new HttpsError("not-found", "Friend request not found");
+    }
+
+    const requestData = requestSnap.data();
+
+    if (!requestData) {
+      throw new HttpsError("internal", "Invalid friend request");
+    }
+
+    if (requestData.toUid !== uid) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only receiver can accept this request"
+      );
+    }
+
+    if (requestData.status !== "pending") {
+      throw new HttpsError("failed-precondition", "Request is not pending");
+    }
+
+    const fromUid = requestData.fromUid;
+    const toUid = requestData.toUid;
+
+    const fromFriendRef = db
+      .collection("users")
+      .doc(fromUid)
+      .collection("friends")
+      .doc(toUid);
+
+    const toFriendRef = db
+      .collection("users")
+      .doc(toUid)
+      .collection("friends")
+      .doc(fromUid);
+
+    const fromFriendSnap = await transaction.get(fromFriendRef);
+
+    const now = admin.firestore.FieldValue.serverTimestamp();
+
+    transaction.set(fromFriendRef, {
+      uid: toUid,
+      nickname: requestData.toNickname,
+      displayName: requestData.toDisplayName || requestData.toNickname,
+      photoUrl: requestData.toPhotoUrl || null,
+      addedAt: now,
+    });
+
+    transaction.set(toFriendRef, {
+      uid: fromUid,
+      nickname: requestData.fromNickname,
+      displayName: requestData.fromDisplayName || requestData.fromNickname,
+      photoUrl: requestData.fromPhotoUrl || null,
+      addedAt: now,
+    });
+
+    transaction.update(requestRef, {
+      status: "accepted",
+      updatedAt: now,
+    });
+
+    if (!fromFriendSnap.exists) {
+      transaction.update(db.collection("users").doc(fromUid), {
+        "stats.friendsCount": admin.firestore.FieldValue.increment(1),
+        updatedAt: now,
+      });
+
+      transaction.update(db.collection("users").doc(toUid), {
+        "stats.friendsCount": admin.firestore.FieldValue.increment(1),
+        updatedAt: now,
+      });
+    }
+  });
+
+  return {
+    success: true,
+  };
+});
+
+export const rejectFriendRequest = onCall(async (request) => {
+  const uid = request.auth?.uid;
+
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "User must be logged in");
+  }
+
+  const requestId = String(request.data?.requestId || "");
+
+  if (!requestId) {
+    throw new HttpsError("invalid-argument", "Missing requestId");
+  }
+
+  const requestRef = db.collection("friendRequests").doc(requestId);
+
+  await db.runTransaction(async (transaction) => {
+    const requestSnap = await transaction.get(requestRef);
+
+    if (!requestSnap.exists) {
+      throw new HttpsError("not-found", "Friend request not found");
+    }
+
+    const requestData = requestSnap.data();
+
+    if (!requestData) {
+      throw new HttpsError("internal", "Invalid friend request");
+    }
+
+    if (requestData.toUid !== uid) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only receiver can reject this request"
+      );
+    }
+
+    if (requestData.status !== "pending") {
+      throw new HttpsError("failed-precondition", "Request is not pending");
+    }
+
+    transaction.update(requestRef, {
+      status: "rejected",
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+
+  return {
+    success: true,
+  };
+});
+
+export const removeFriend = onCall(async (request) => {
+  const uid = request.auth?.uid;
+
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "User must be logged in");
+  }
+
+  const friendUid = String(request.data?.friendUid || "");
+
+  if (!friendUid) {
+    throw new HttpsError("invalid-argument", "Missing friendUid");
+  }
+
+  if (uid === friendUid) {
+    throw new HttpsError("invalid-argument", "Invalid friendUid");
+  }
+
+  const myFriendRef = db
+    .collection("users")
+    .doc(uid)
+    .collection("friends")
+    .doc(friendUid);
+
+  const otherFriendRef = db
+    .collection("users")
+    .doc(friendUid)
+    .collection("friends")
+    .doc(uid);
+
+  const requestId = getFriendRequestId(uid, friendUid);
+  const requestRef = db.collection("friendRequests").doc(requestId);
+
+  await db.runTransaction(async (transaction) => {
+    const myFriendSnap = await transaction.get(myFriendRef);
+
+    if (!myFriendSnap.exists) {
+      throw new HttpsError("not-found", "Friend relation not found");
+    }
+
+    const now = admin.firestore.FieldValue.serverTimestamp();
+
+    transaction.delete(myFriendRef);
+    transaction.delete(otherFriendRef);
+
+    transaction.set(
+      requestRef,
+      {
+        status: "removed",
+        updatedAt: now,
+      },
+      {
+        merge: true,
+      }
+    );
+
+    transaction.update(db.collection("users").doc(uid), {
+      "stats.friendsCount": admin.firestore.FieldValue.increment(-1),
+      updatedAt: now,
+    });
+
+    transaction.update(db.collection("users").doc(friendUid), {
+      "stats.friendsCount": admin.firestore.FieldValue.increment(-1),
+      updatedAt: now,
+    });
+  });
+
+  return {
+    success: true,
+  };
+});
+
+
 type GameModeConfig = {
   type: GameModeType;
   displayName: string;
