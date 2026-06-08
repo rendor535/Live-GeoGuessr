@@ -3,6 +3,8 @@ package com.example.livegeoguessr.ui.screens.settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -46,6 +48,18 @@ fun ProfileScreen(
     var showAddFriendDialog by remember { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
     var tempUri by remember { mutableStateOf<android.net.Uri?>(null) }
+
+    // Animations
+    val infiniteTransition = rememberInfiniteTransition(label = "pointsBadge")
+    val badgeBounce by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "badgeBounce"
+    )
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -112,7 +126,7 @@ fun ProfileScreen(
                 Surface(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .offset(y = 4.dp)
+                        .offset { androidx.compose.ui.unit.IntOffset(0, (4.dp + badgeBounce.dp).roundToPx()) }
                         .height(32.dp)
                         .width(80.dp),
                     shape = RoundedCornerShape(16.dp),
@@ -149,7 +163,7 @@ fun ProfileScreen(
             )
 
             Button(
-                onClick = { /* TODO */ },
+                onClick = { showAddFriendDialog = true },
                 modifier = Modifier.padding(top = 8.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondary
@@ -167,29 +181,39 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Stats Cards
-            ProfileStatsCard(
-                icon = Icons.Default.Group,
-                label = stringResource(R.string.friends),
-                value = uiState.friendsCount.toString(),
-                onClick = { navController.navigate(Screen.Friends.route) }
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            ProfileStatsCard(
-                icon = Icons.Default.CameraAlt,
-                label = stringResource(R.string.posts),
-                value = uiState.postsCount.toString()
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            ProfileStatsCard(
-                icon = Icons.Default.LocationOn,
-                label = stringResource(R.string.guesses),
-                value = uiState.guessesCount.toString()
-            )
+            // Stats Cards with entrance animation
+            var statsVisible by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) { statsVisible = true }
+
+            AnimatedVisibility(
+                visible = statsVisible,
+                enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(animationSpec = tween(500)),
+            ) {
+                Column {
+                    ProfileStatsCard(
+                        icon = Icons.Default.Group,
+                        label = stringResource(R.string.friends),
+                        value = uiState.friendsCount.toString(),
+                        onClick = { navController.navigate(Screen.Friends.route) }
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    ProfileStatsCard(
+                        icon = Icons.Default.CameraAlt,
+                        label = stringResource(R.string.posts),
+                        value = uiState.postsCount.toString()
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    ProfileStatsCard(
+                        icon = Icons.Default.LocationOn,
+                        label = stringResource(R.string.guesses),
+                        value = uiState.guessesCount.toString()
+                    )
+                }
+            }
         }
     }
 
