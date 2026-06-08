@@ -1,15 +1,17 @@
 <resources>
     <string name="app_name">LiveGeoGuessr</string>
-    <string name="camera_permission_rationale">The camera is important for this app. Please grant the permission.</string>
-    <string name="camera_permission_required">Camera permission required.</string>
-    <string name="request_permission">Request permission</string>
+    <string name="camera_permission_title">Camera Access</string>
+    <string name="camera_permission_rationale">To share amazing locations with the community, we need access to your camera. Snap photos and let others guess where you are!</string>
+    <string name="camera_permission_required">Camera access is required to take and post photos. Please enable it in your device settings.</string>
+    <string name="request_permission">Grant Access</string>
     <string name="cancel_retake">Cancel and retake</string>
     <string name="post">Post</string>
     <string name="confirm_photo">Confirm photo</string>
     <string name="take_photo">Take Photo</string>
     <string name="captured_photo">Captured Photo</string>
-    <string name="location_permission_rationale">Location permission is required to tag the photo.</string>
-    <string name="grant_permission">Grant Permission</string>
+    <string name="location_permission_title">Location Access</string>
+    <string name="location_permission_rationale">We need your location to tag your photos accurately and show you where others have been. Help us map the world!</string>
+    <string name="grant_permission">Grant Access</string>
     <string name="your_location">Your Location</string>
     <string name="login">Login</string>
     <string name="register">Register</string>

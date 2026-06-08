@@ -7,13 +7,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -45,21 +49,67 @@ fun CameraScreen(
     if (cameraPermissionState.status.isGranted) {
         CameraContent(viewModel = viewModel)
     } else {
-        Column(
+        Box(
             modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            contentAlignment = Alignment.Center
         ) {
-            val textToShow = if (cameraPermissionState.status.shouldShowRationale) {
-                stringResource(R.string.camera_permission_rationale)
-            } else {
-                stringResource(R.string.camera_permission_required)
-            }
+            Surface(
+                modifier = Modifier
+                    .padding(32.dp)
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 8.dp,
+                shadowElevation = 4.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PhotoCamera,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    val title = stringResource(R.string.camera_permission_title)
+                    val description = if (cameraPermissionState.status.shouldShowRationale) {
+                        stringResource(R.string.camera_permission_rationale)
+                    } else {
+                        stringResource(R.string.camera_permission_required)
+                    }
 
-            Text(textToShow, modifier = Modifier.padding(16.dp))
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
 
-            Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
-                Text(stringResource(R.string.request_permission))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Button(
+                        onClick = { cameraPermissionState.launchPermissionRequest() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(stringResource(R.string.request_permission))
+                    }
+                }
             }
         }
     }
