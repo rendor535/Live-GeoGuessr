@@ -134,7 +134,12 @@ fun HomeScreen(
 }
 
 @Composable
-fun PostItem(post: Post, onClick: (() -> Unit)? = null) {
+fun PostItem(
+    post: Post,
+    distanceMeters: Double? = null,
+    points: Int? = null,
+    onClick: (() -> Unit)? = null
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -171,11 +176,10 @@ fun PostItem(post: Post, onClick: (() -> Unit)? = null) {
                         color = MaterialTheme.colorScheme.onPrimary,
                         style = MaterialTheme.typography.titleMedium
                     )
-
                 }
-                
+
                 Spacer(modifier = Modifier.width(12.dp))
-                
+
                 Text(
                     text = post.user,
                     style = MaterialTheme.typography.titleLarge,
@@ -184,13 +188,54 @@ fun PostItem(post: Post, onClick: (() -> Unit)? = null) {
                 )
             }
 
+            // TUTAJ DODAJESZ BLOK Z ODLEGŁOŚCIĄ I PUNKTAMI
+            if (distanceMeters != null || points != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    distanceMeters?.let {
+                        Text(
+                            text = "Odległość: %.2f km".format(it / 1000.0),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    if (distanceMeters != null && points != null) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "•",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+
+                    points?.let {
+                        Text(
+                            text = "$it pkt",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
             AsyncImage(
                 model = post.imageUrl,
                 contentDescription = stringResource(R.string.post_image_description),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(160.dp)
-                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
+                    .clip(
+                        androidx.compose.foundation.shape.RoundedCornerShape(
+                            bottomStart = 24.dp,
+                            bottomEnd = 24.dp
+                        )
+                    ),
                 contentScale = ContentScale.Crop
             )
         }

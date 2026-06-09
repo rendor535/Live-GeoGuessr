@@ -18,6 +18,7 @@ import android.net.Uri
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.livegeoguessr.ui.screens.posts.MyPostLocationScreen
+import com.example.livegeoguessr.ui.screens.guessedposts.GuessedPostsScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
@@ -46,6 +47,9 @@ fun AppNavGraph(
         }
         composable(Screen.AddFriend.route) {
             AddFriendScreen(navController)
+        }
+        composable(Screen.GuessedPosts.route) {
+            GuessedPostsScreen(navController)
         }
         composable (Screen.Login.route) {
             AuthScreen(
