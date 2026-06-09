@@ -68,7 +68,40 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun updateProfilePicture(uri: Uri) {
-        _uiState.update { it.copy(profileImageUrl = uri.toString()) }
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorResId = null) }
+
+            val uid = authRepository.currentUid()
+
+            if (uid == null) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorResId = R.string.user_not_found
+                    )
+                }
+                return@launch
+            }
+
+            try {
+                val newPhotoUrl = userRepository.updateProfilePicture(uid, uri)
+
+                _uiState.update {
+                    it.copy(
+                        profileImageUrl = newPhotoUrl,
+                        isLoading = false,
+                        isSuccess = true
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorResId = R.string.user_not_found
+                    )
+                }
+            }
+        }
     }
 
     fun saveProfile() {
