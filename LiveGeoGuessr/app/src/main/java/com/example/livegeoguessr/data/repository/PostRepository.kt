@@ -24,7 +24,7 @@ class PostRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val storage: FirebaseStorage
 ) {
-
+    private val TAG = "PostRepositoryDebug"
     suspend fun getPosts(): List<Post> {
         return try {
             val friendUids = getFriendUids()
@@ -86,7 +86,7 @@ class PostRepository @Inject constructor(
 
             val snapshot = firestore
                 .collection("posts")
-                .whereEqualTo("userUid", currentUser.uid)
+                .whereEqualTo("userId", currentUser.uid)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .await()
@@ -101,10 +101,8 @@ class PostRepository @Inject constructor(
     }
     suspend fun getMyGuessedPosts(): List<GuessedPost> {
         val guessDocuments = getMyGuessDocuments()
-
         val guessedData = guessDocuments.mapNotNull { document ->
             val postId = document.getString("postId") ?: return@mapNotNull null
-
             GuessedPostData(
                 postId = postId,
                 distanceMeters = document.getDouble("distanceMeters") ?: 0.0,
@@ -142,7 +140,6 @@ class PostRepository @Inject constructor(
             .whereEqualTo("userUid", currentUser.uid)
             .get()
             .await()
-
         return snapshot.documents.sortedByDescending { document ->
             document.getTimestamp("createdAt")?.seconds ?: 0L
         }
