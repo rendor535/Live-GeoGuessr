@@ -7,12 +7,13 @@ import com.google.firebase.firestore.FieldValue
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.net.Uri
 
 @Singleton
 class UserRepository @Inject constructor(){
 
     private val users = FirebaseModule.firestore.collection("users")
-
+    private val storage = FirebaseModule.storage
     suspend fun createUserIfNotExists(firebaseUser: FirebaseUser) {
         val uid = firebaseUser.uid
         val ref = users.document(uid)
@@ -57,5 +58,26 @@ class UserRepository @Inject constructor(){
     suspend fun getUserProfile(uid: String): UserProfile? {
         val snapshot = users.document(uid).get().await()
         return snapshot.toObject(UserProfile::class.java)
+    }
+
+    suspend fun updateProfilePicture(uid: String, imageUri: Uri): String {
+        val avatarPath = "avatars/$uid/profile_${System.currentTimeMillis()}.jpg"
+        val avatarRef = storage.reference.child(avatarPath)
+
+        avatarRef.putFile(imageUri).await()
+
+        val downloadUrl = avatarRef.downloadUrl.await().toString()
+
+        users.document(uid)
+            .update(
+                mapOf(
+                    "photoUrl" to downloadUrl,
+                    "avatarPath" to avatarPath,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+            .await()
+
+        return downloadUrl
     }
 }

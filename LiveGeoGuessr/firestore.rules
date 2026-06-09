@@ -3,17 +3,152 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // This rule allows anyone with your Firestore database reference to view, edit,
-    // and delete all data in your Firestore database. It is useful for getting
-    // started, but it is configured to expire after 30 days because it
-    // leaves your app open to attackers. At that time, all client
-    // requests to your Firestore database will be denied.
-    //
-    // Make sure to write security rules for your app before that time, or else
-    // all client requests to your Firestore database will be denied until you Update
-    // your rules
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isFriend(uid) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid)/friends/$(uid));
+    }
+
+    function validUserCreate(uid) {
+      return isSelf(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.email is string
+        && request.resource.data.displayName is string
+        && request.resource.data.nickname is string
+        && (
+          request.resource.data.photoUrl == null ||
+          request.resource.data.photoUrl is string
+        )
+        && request.resource.data.avatarPath == null
+        && request.resource.data.isBanned == false
+        && request.resource.data.stats.pointsTotal == 0
+        && request.resource.data.stats.guessesCount == 0
+        && request.resource.data.stats.postsCount == 0
+        && request.resource.data.stats.friendsCount == 0
+        && request.resource.data.stats.bestGuessMeters == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.lastLoginAt == request.time;
+    }
+
+    function validUserSelfUpdate() {
+      return signedIn()
+        && request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly([
+            "lastLoginAt",
+            "updatedAt",
+            "photoUrl",
+            "avatarPath"
+          ])
+        && request.resource.data.updatedAt == request.time
+        && (
+          !request.resource.data.diff(resource.data).changedKeys().hasAny(["lastLoginAt"]) ||
+          request.resource.data.lastLoginAt == request.time
+        )
+        && (
+          !request.resource.data.diff(resource.data).changedKeys().hasAny(["photoUrl"]) ||
+          request.resource.data.photoUrl is string
+        )
+        && (
+          !request.resource.data.diff(resource.data).changedKeys().hasAny(["avatarPath"]) ||
+          request.resource.data.avatarPath.matches("^avatars/" + request.auth.uid + "/profile_[0-9]+\\.jpg$")
+        );
+    }
+
+    function validPostCreate() {
+      return signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.user is string
+        && request.resource.data.imageUrl is string
+        && request.resource.data.latitude is number
+        && request.resource.data.longitude is number
+        && request.resource.data.latitude >= -90
+        && request.resource.data.latitude <= 90
+        && request.resource.data.longitude >= -180
+        && request.resource.data.longitude <= 180
+        && request.resource.data.isActive == true
+        && request.resource.data.createdAt == request.time
+        && (
+          !("gameMode" in request.resource.data) ||
+          request.resource.data.gameMode == "CITY"
+        );
+    }
+
+    match /users/{uid} {
+      // Wymagane przez:
+      // - getUsersForFriendSearch()
+      // - getFriends()
+      // - getUserProfile()
+      allow get, list: if signedIn();
+
+      // Wymagane przez createUserIfNotExists()
+      allow create: if validUserCreate(uid);
+
+      // Wymagane przez:
+      // - login update lastLoginAt
+      // - updateProfilePicture()
+      allow update: if isSelf(uid) && validUserSelfUpdate();
+
+      allow delete: if false;
+
+      match /friends/{friendUid} {
+        // Wymagane przez getFriendUids() i getFriends()
+        allow read: if isSelf(uid);
+
+        // Tworzenie/usuwanie znajomych tylko przez Cloud Functions.
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /posts/{postId} {
+      // Wymagane przez getPosts().
+      // Użytkownik może czytać własne posty oraz posty znajomych.
+      allow get, list: if signedIn()
+        && (
+          resource.data.userId == request.auth.uid ||
+          isFriend(resource.data.userId)
+        );
+
+      // Wymagane przez addPost().
+      allow create: if validPostCreate();
+
+      // Brak obsługi edycji/usuwania posta w podanym kodzie.
+      allow update, delete: if false;
+    }
+
+    match /guesses/{guessId} {
+      // Potrzebne, bo getMyGuessForPost() sprawdza też dokument,
+      // który może jeszcze nie istnieć.
+      allow get: if signedIn()
+        && guessId.matches("^" + request.auth.uid + "_.*");
+
+      allow list: if false;
+
+      // Zgadywanie zapisuje tylko Cloud Function submitGuess.
+      allow create, update, delete: if false;
+    }
+
+    match /friendRequests/{requestId} {
+      // Wymagane przez getIncomingRequests() i getOutgoingRequests().
+      allow get, list: if signedIn()
+        && (
+          resource.data.fromUid == request.auth.uid ||
+          resource.data.toUid == request.auth.uid
+        );
+
+      // Wysyłanie/akceptacja/odrzucanie/usuwanie przez Cloud Functions.
+      allow create, update, delete: if false;
+    }
+
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 6, 12);
+      allow read, write: if false;
     }
   }
 }
