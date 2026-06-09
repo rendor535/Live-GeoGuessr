@@ -4,6 +4,8 @@ Show off your geo-locating skills to your friends by guessing where they took th
 
 Simply log in with your Google account, click the camera button on the bottom and start adding photos for others to guess! Alternatively, click on one of the photos on the main screen, place a waypoint on the map and see if you got what it takes to score the best guesses!
 
+Tags: geoguessr, camera, gps, irl, in-real-live, pictures, friends, map
+
 ### Guess where your friend took the picture and gain points!
 
 ![alt text](https://i.imgur.com/WCusxNW.png "Ekran główny") ![alt text](https://i.imgur.com/XfnAuPz.png "Live GeoGuessr") ![alt text](https://i.imgur.com/2arwWpo.png "Zgadywanie") 
