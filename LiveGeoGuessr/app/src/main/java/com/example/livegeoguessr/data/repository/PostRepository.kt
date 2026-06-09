@@ -6,6 +6,7 @@ import com.example.livegeoguessr.domain.model.Post
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +15,7 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
+
 
 @Singleton
 class PostRepository @Inject constructor(
@@ -69,7 +71,26 @@ class PostRepository @Inject constructor(
             throw e
         }
     }
+    suspend fun getMyPosts(): List<Post> {
+        return try {
+            val currentUser = auth.currentUser
+                ?: throw IllegalStateException("User is not logged in")
 
+            val snapshot = firestore
+                .collection("posts")
+                .whereEqualTo("userId", currentUser.uid)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .get()
+                .await()
+
+            snapshot.documents.mapNotNull { document ->
+                PostFactory.fromDocument(document)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("PostRepository", "Error loading my posts", e)
+            throw e
+        }
+    }
     private suspend fun getFriendUids(): List<String> {
         val currentUser = auth.currentUser
             ?: throw IllegalStateException("User is not logged in")
@@ -123,8 +144,19 @@ class PostRepository @Inject constructor(
 
         postDocument.set(postData).await()
 
+        firestore
+            .collection("users")
+            .document(userId)
+            .update(
+                mapOf(
+                    "stats.postsCount" to FieldValue.increment(1),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+            .await()
         return Post(
             id = postId,
+            authorUid = userId,
             user = userName,
             imageUrl = imageUrl,
             latitude = latitude,

@@ -13,6 +13,7 @@ import com.example.livegeoguessr.ui.screens.settings.ProfileScreen
 import com.example.livegeoguessr.ui.screens.guess.GuessScreen
 import com.example.livegeoguessr.ui.screens.friends.FriendsScreen
 import com.example.livegeoguessr.ui.screens.friends.AddFriendScreen
+import com.example.livegeoguessr.ui.screens.posts.PostsScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
@@ -50,6 +51,9 @@ fun AppNavGraph(
                     }
                 }
             )
+        }
+        composable(Screen.Posts.route) {
+            PostsScreen()
         }
         composable(Screen.Guess.route) { backStackEntry ->
             val postId = backStackEntry.arguments?.getString("postId") ?: ""

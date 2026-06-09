@@ -198,6 +198,28 @@ export const acceptFriendRequest = onCall(async (request) => {
   };
 });
 
+export const getMyPostsCount = onCall(
+  {
+    region: "us-central1",
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "User must be logged in.");
+    }
+
+    const snapshot = await db
+      .collection("posts")
+      .where("userId", "==", uid)
+      .get();
+
+    return {
+      postsCount: snapshot.size,
+    };
+  }
+);
+
 export const rejectFriendRequest = onCall(async (request) => {
   const uid = request.auth?.uid;
 
@@ -613,6 +635,15 @@ export const submitGuess = onCall(
         throw new HttpsError("not-found", "Post not found.");
       }
 
+      const postOwnerUid = String(post.userId ?? "");
+
+      if (postOwnerUid === uid) {
+        throw new HttpsError(
+          "permission-denied",
+          "Cannot guess your own post."
+        );
+      }
+
       const realLatitude = Number(post.latitude);
       const realLongitude = Number(post.longitude);
 
@@ -694,6 +725,8 @@ export const submitGuess = onCall(
 
     return result;
   }
+
+
 );
 
 

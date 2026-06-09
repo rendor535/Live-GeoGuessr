@@ -14,6 +14,7 @@ sealed class Screen(val route: String, val icon: ImageVector) {
     object Friends : Screen("friends", Icons.Default.Person)
     object Login : Screen("login", Icons.Default.Person)
     object AddFriend : Screen("add_friend",  Icons.Default.Person)
+    object Posts : Screen("posts", Icons.Default.CameraAlt)
     object Guess : Screen("guess/{postId}/{imageUrl}/{lat}/{lon}", Icons.Default.Home) {
         fun createRoute(
             postId: String,
