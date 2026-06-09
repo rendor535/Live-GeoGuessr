@@ -18,6 +18,8 @@ data class PostsUiState(
 )
 
 @HiltViewModel
+
+
 class PostsViewModel @Inject constructor(
     private val postRepository: PostRepository
 ) : ViewModel() {
