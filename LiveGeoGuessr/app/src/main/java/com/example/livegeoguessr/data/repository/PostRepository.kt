@@ -15,7 +15,8 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
-
+import com.example.livegeoguessr.domain.model.GuessedPost
+import com.google.firebase.firestore.FieldPath
 
 @Singleton
 class PostRepository @Inject constructor(
@@ -27,7 +28,7 @@ class PostRepository @Inject constructor(
     suspend fun getPosts(): List<Post> {
         return try {
             val friendUids = getFriendUids()
-
+            val guessedPostIds = getMyGuessedPostIds()
             android.util.Log.d("PostRepository", "Current user: ${auth.currentUser?.uid}")
             android.util.Log.d("PostRepository", "Friend UIDs: $friendUids")
 
@@ -64,8 +65,15 @@ class PostRepository @Inject constructor(
             }
 
             android.util.Log.d("PostRepository", "Total posts from friends: ${postsFromFriends.size}")
+            android.util.Log.d("PostRepository", "Guessed post IDs: $guessedPostIds")
 
-            postsFromFriends
+            val notGuessedPosts = postsFromFriends.filter { post ->
+                post.id !in guessedPostIds
+            }
+
+            android.util.Log.d("PostRepository", "Posts after filtering guessed: ${notGuessedPosts.size}")
+
+            notGuessedPosts
         } catch (e: Exception) {
             android.util.Log.e("PostRepository", "Error loading friend posts", e)
             throw e
@@ -78,7 +86,7 @@ class PostRepository @Inject constructor(
 
             val snapshot = firestore
                 .collection("posts")
-                .whereEqualTo("userId", currentUser.uid)
+                .whereEqualTo("userUid", currentUser.uid)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .await()
@@ -91,6 +99,84 @@ class PostRepository @Inject constructor(
             throw e
         }
     }
+    suspend fun getMyGuessedPosts(): List<GuessedPost> {
+        val guessDocuments = getMyGuessDocuments()
+
+        val guessedData = guessDocuments.mapNotNull { document ->
+            val postId = document.getString("postId") ?: return@mapNotNull null
+
+            GuessedPostData(
+                postId = postId,
+                distanceMeters = document.getDouble("distanceMeters") ?: 0.0,
+                points = document.getLong("points")?.toInt() ?: 0
+            )
+        }
+
+        val postsById = getPostsByIds(
+            guessedData.map { it.postId }
+        )
+
+        return guessedData.mapNotNull { guess ->
+            val post = postsById[guess.postId] ?: return@mapNotNull null
+
+            GuessedPost(
+                post = post,
+                distanceMeters = guess.distanceMeters,
+                points = guess.points
+            )
+        }
+    }
+
+    private suspend fun getMyGuessedPostIds(): Set<String> {
+        return getMyGuessDocuments()
+            .mapNotNull { document -> document.getString("postId") }
+            .toSet()
+    }
+
+    private suspend fun getMyGuessDocuments(): List<DocumentSnapshot> {
+        val currentUser = auth.currentUser
+            ?: throw IllegalStateException("User is not logged in")
+
+        val snapshot = firestore
+            .collection("guesses")
+            .whereEqualTo("userUid", currentUser.uid)
+            .get()
+            .await()
+
+        return snapshot.documents.sortedByDescending { document ->
+            document.getTimestamp("createdAt")?.seconds ?: 0L
+        }
+    }
+
+    private suspend fun getPostsByIds(postIds: List<String>): Map<String, Post> {
+        if (postIds.isEmpty()) {
+            return emptyMap()
+        }
+
+        val posts = mutableMapOf<String, Post>()
+
+        postIds.distinct().chunked(30).forEach { chunk ->
+            val snapshot = firestore
+                .collection("posts")
+                .whereIn(FieldPath.documentId(), chunk)
+                .get()
+                .await()
+
+            snapshot.documents.forEach { document ->
+                PostFactory.fromDocument(document)?.let { post ->
+                    posts[post.id] = post
+                }
+            }
+        }
+
+        return posts
+    }
+
+    private data class GuessedPostData(
+        val postId: String,
+        val distanceMeters: Double,
+        val points: Int
+    )
     private suspend fun getFriendUids(): List<String> {
         val currentUser = auth.currentUser
             ?: throw IllegalStateException("User is not logged in")

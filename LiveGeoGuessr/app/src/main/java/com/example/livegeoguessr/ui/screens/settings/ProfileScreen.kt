@@ -210,7 +210,8 @@ fun ProfileScreen(
                     ProfileStatsCard(
                         icon = Icons.Default.LocationOn,
                         label = stringResource(R.string.guesses),
-                        value = uiState.guessesCount.toString()
+                        value = uiState.guessesCount.toString(),
+                        onClick = { navController.navigate(Screen.GuessedPosts.route) }
                     )
                 }
             }
