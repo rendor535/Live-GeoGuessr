@@ -124,13 +124,14 @@ service cloud.firestore {
     }
 
     match /guesses/{guessId} {
-      // Wymagane przez getMyGuessForPost().
+      // Potrzebne, bo getMyGuessForPost() sprawdza też dokument,
+      // który może jeszcze nie istnieć.
       allow get: if signedIn()
-        && resource.data.userUid == request.auth.uid;
+        && guessId.matches("^" + request.auth.uid + "_.*");
 
       allow list: if false;
 
-      // Zgadywanie zapisuje Cloud Function submitGuess.
+      // Zgadywanie zapisuje tylko Cloud Function submitGuess.
       allow create, update, delete: if false;
     }
 
