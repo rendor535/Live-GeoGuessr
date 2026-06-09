@@ -198,28 +198,6 @@ export const acceptFriendRequest = onCall(async (request) => {
   };
 });
 
-export const getMyPostsCount = onCall(
-  {
-    region: "us-central1",
-  },
-  async (request) => {
-    const uid = request.auth?.uid;
-
-    if (!uid) {
-      throw new HttpsError("unauthenticated", "User must be logged in.");
-    }
-
-    const snapshot = await db
-      .collection("posts")
-      .where("userId", "==", uid)
-      .get();
-
-    return {
-      postsCount: snapshot.size,
-    };
-  }
-);
-
 export const rejectFriendRequest = onCall(async (request) => {
   const uid = request.auth?.uid;
 
