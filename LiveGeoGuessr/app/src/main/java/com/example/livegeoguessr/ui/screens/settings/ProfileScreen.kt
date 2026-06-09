@@ -201,7 +201,8 @@ fun ProfileScreen(
                     ProfileStatsCard(
                         icon = Icons.Default.CameraAlt,
                         label = stringResource(R.string.posts),
-                        value = uiState.postsCount.toString()
+                        value = uiState.postsCount.toString(),
+                        onClick = { navController.navigate(Screen.Posts.route) }
                     )
                     
                     Spacer(modifier = Modifier.height(12.dp))

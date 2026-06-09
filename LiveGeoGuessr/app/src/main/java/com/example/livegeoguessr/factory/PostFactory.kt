@@ -11,9 +11,11 @@ object PostFactory {
         val latitude = document.getDouble("latitude") ?: return null
         val longitude = document.getDouble("longitude") ?: return null
         val user = document.getString("user") ?: ""
+        val authorUid = document.getString("userId") ?: ""
 
         return Post(
             id = document.id,
+            authorUid = authorUid,
             user = user,
             imageUrl = imageUrl,
             latitude = latitude,

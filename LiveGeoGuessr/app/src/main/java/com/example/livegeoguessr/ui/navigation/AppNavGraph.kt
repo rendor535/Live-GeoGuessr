@@ -13,6 +13,11 @@ import com.example.livegeoguessr.ui.screens.settings.ProfileScreen
 import com.example.livegeoguessr.ui.screens.guess.GuessScreen
 import com.example.livegeoguessr.ui.screens.friends.FriendsScreen
 import com.example.livegeoguessr.ui.screens.friends.AddFriendScreen
+import com.example.livegeoguessr.ui.screens.posts.PostsScreen
+import android.net.Uri
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import com.example.livegeoguessr.ui.screens.posts.MyPostLocationScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
@@ -51,6 +56,9 @@ fun AppNavGraph(
                 }
             )
         }
+        composable(Screen.Posts.route) {
+            PostsScreen(navController)
+        }
         composable(Screen.Guess.route) { backStackEntry ->
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
             val imageUrl = backStackEntry.arguments?.getString("imageUrl") ?: ""
@@ -58,6 +66,34 @@ fun AppNavGraph(
             GuessScreen(
                 postId = postId,
                 imageUrl = imageUrl,
+            )
+        }
+        composable(
+            route = Screen.MyPostLocation.route,
+            arguments = listOf(
+                navArgument("imageUrl") { type = NavType.StringType },
+                navArgument("lat") { type = NavType.StringType },
+                navArgument("lon") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val imageUrl = Uri.decode(
+                backStackEntry.arguments?.getString("imageUrl") ?: ""
+            )
+
+            val lat = backStackEntry.arguments
+                ?.getString("lat")
+                ?.toDoubleOrNull()
+                ?: 0.0
+
+            val lon = backStackEntry.arguments
+                ?.getString("lon")
+                ?.toDoubleOrNull()
+                ?: 0.0
+
+            MyPostLocationScreen(
+                imageUrl = imageUrl,
+                latitude = lat,
+                longitude = lon
             )
         }
     }
