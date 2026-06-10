@@ -17,7 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import com.example.livegeoguessr.domain.model.GuessedPost
 import com.google.firebase.firestore.FieldPath
-
+import com.example.livegeoguessr.domain.model.PublicUser
 @Singleton
 class PostRepository @Inject constructor(
     private val auth: FirebaseAuth,
@@ -73,10 +73,57 @@ class PostRepository @Inject constructor(
 
             android.util.Log.d("PostRepository", "Posts after filtering guessed: ${notGuessedPosts.size}")
 
-            notGuessedPosts
+            attachAuthorProfiles(notGuessedPosts)
         } catch (e: Exception) {
             android.util.Log.e("PostRepository", "Error loading friend posts", e)
             throw e
+        }
+    }
+    private suspend fun attachAuthorProfiles(posts: List<Post>): List<Post> {
+        if (posts.isEmpty()) {
+            return posts
+        }
+
+        val authorUids = posts
+            .map { it.authorUid }
+            .filter { it.isNotBlank() }
+            .distinct()
+
+        if (authorUids.isEmpty()) {
+            return posts
+        }
+
+        val usersByUid = mutableMapOf<String, PublicUser>()
+
+        authorUids.chunked(30).forEach { uidChunk ->
+            val snapshot = firestore
+                .collection("users")
+                .whereIn(FieldPath.documentId(), uidChunk)
+                .get()
+                .await()
+
+            snapshot.documents.forEach { document ->
+                usersByUid[document.id] = PublicUser(
+                    uid = document.id,
+                    nickname = document.getString("nickname") ?: "",
+                    displayName = document.getString("displayName") ?: "",
+                    photoUrl = document.getString("photoUrl")
+                )
+            }
+        }
+
+        return posts.map { post ->
+            val author = usersByUid[post.authorUid]
+
+            val displayName =
+                author?.nickname?.takeIf { it.isNotBlank() }
+                    ?: author?.displayName?.takeIf { it.isNotBlank() }
+                    ?: post.user
+
+            post.copy(
+                user = displayName,
+                authorPhotoUrl = author?.photoUrl ?: post.authorPhotoUrl
+            )
         }
     }
     suspend fun getMyPosts(): List<Post> {
@@ -91,9 +138,11 @@ class PostRepository @Inject constructor(
                 .get()
                 .await()
 
-            snapshot.documents.mapNotNull { document ->
+            val posts = snapshot.documents.mapNotNull { document ->
                 PostFactory.fromDocument(document)
             }
+
+            attachAuthorProfiles(posts)
         } catch (e: Exception) {
             android.util.Log.e("PostRepository", "Error loading my posts", e)
             throw e
@@ -166,7 +215,11 @@ class PostRepository @Inject constructor(
             }
         }
 
-        return posts
+        val enrichedPosts = attachAuthorProfiles(posts.values.toList())
+
+        return enrichedPosts.associateBy { post ->
+            post.id
+        }
     }
 
     private data class GuessedPostData(
@@ -199,9 +252,23 @@ class PostRepository @Inject constructor(
             ?: throw IllegalStateException("User is not logged in")
 
         val userId = currentUser.uid
-        val userName = currentUser.displayName
-            ?: currentUser.email
-            ?: "Unknown user"
+
+        val userDocument = firestore
+            .collection("users")
+            .document(userId)
+            .get()
+            .await()
+
+        val userName =
+            userDocument.getString("nickname")?.takeIf { it.isNotBlank() }
+                ?: userDocument.getString("displayName")?.takeIf { it.isNotBlank() }
+                ?: currentUser.displayName
+                ?: currentUser.email
+                ?: "Unknown user"
+
+        val userPhotoUrl =
+            userDocument.getString("photoUrl")
+                ?: currentUser.photoUrl?.toString()
 
         val postDocument = firestore.collection("posts").document()
         val postId = postDocument.id
@@ -220,6 +287,7 @@ class PostRepository @Inject constructor(
         val postData = PostFactory.toFirestoreMap(
             userId = userId,
             userName = userName,
+            userPhotoUrl = userPhotoUrl,
             imageUrl = imageUrl,
             latitude = latitude,
             longitude = longitude
@@ -243,7 +311,8 @@ class PostRepository @Inject constructor(
             user = userName,
             imageUrl = imageUrl,
             latitude = latitude,
-            longitude = longitude
+            longitude = longitude,
+            authorPhotoUrl = userPhotoUrl
         )
     }
     private fun Bitmap.toJpegByteArray(): ByteArray {

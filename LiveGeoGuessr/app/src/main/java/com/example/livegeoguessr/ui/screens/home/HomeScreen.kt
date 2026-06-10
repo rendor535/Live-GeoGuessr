@@ -20,21 +20,32 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.livegeoguessr.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil.compose.AsyncImage
-import com.example.livegeoguessr.domain.model.Post
-
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.example.livegeoguessr.R
+import com.example.livegeoguessr.domain.model.Post
 import com.example.livegeoguessr.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,7 +63,10 @@ fun HomeScreen(
     ) {
         when {
             uiState.isLoading && uiState.posts.isEmpty() -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator()
                 }
             }
@@ -83,22 +97,28 @@ fun HomeScreen(
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                             )
                         }
+
                         Spacer(modifier = Modifier.height(24.dp))
+
                         Text(
                             text = stringResource(R.string.no_posts),
                             style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            textAlign = TextAlign.Center
                         )
+
                         Spacer(modifier = Modifier.height(8.dp))
+
                         Text(
                             text = stringResource(R.string.pull_to_refresh_no_posts),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            textAlign = TextAlign.Center
                         )
+
                         Spacer(modifier = Modifier.height(24.dp))
+
                         Button(
                             onClick = { navController.navigate(Screen.AddFriend.route) },
                             shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
@@ -167,18 +187,29 @@ fun PostItem(
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                ) {
-                    Text(
-                        text = post.user.firstOrNull()?.toString() ?: "",
-                        modifier = Modifier.align(Alignment.Center),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.titleMedium
+                if (!post.authorPhotoUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = post.authorPhotoUrl,
+                        contentDescription = "Zdjęcie profilowe",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text(
+                            text = post.user.firstOrNull()?.toString() ?: "",
+                            modifier = Modifier.align(Alignment.Center),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -187,11 +218,10 @@ fun PostItem(
                     text = post.user,
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            // TUTAJ DODAJESZ BLOK Z ODLEGŁOŚCIĄ I PUNKTAMI
             if (distanceMeters != null || points != null) {
                 Row(
                     modifier = Modifier
@@ -209,10 +239,12 @@ fun PostItem(
 
                     if (distanceMeters != null && points != null) {
                         Spacer(modifier = Modifier.width(8.dp))
+
                         Text(
                             text = "•",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
                         Spacer(modifier = Modifier.width(8.dp))
                     }
 
@@ -221,7 +253,7 @@ fun PostItem(
                             text = stringResource(R.string.points_suffix, it),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
