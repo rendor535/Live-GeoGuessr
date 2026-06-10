@@ -19,6 +19,9 @@ import coil.compose.AsyncImage
 import com.example.livegeoguessr.ui.screens.guess.MapViewContainer
 import org.osmdroid.util.GeoPoint
 
+import androidx.compose.ui.res.stringResource
+import com.example.livegeoguessr.R
+
 @Composable
 fun MyPostLocationScreen(
     imageUrl: String,
@@ -76,7 +79,7 @@ fun MyPostLocationScreen(
 
         AsyncImage(
             model = imageUrl,
-            contentDescription = "Zdjęcie posta",
+            contentDescription = stringResource(R.string.post_image_description),
             modifier = imageModifier,
             contentScale = if (isImageFullScreen) ContentScale.Fit else ContentScale.Crop
         )
