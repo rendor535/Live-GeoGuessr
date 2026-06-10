@@ -44,6 +44,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.livegeoguessr.ui.components.ProfileImage
 
+import androidx.compose.ui.res.stringResource
+import com.example.livegeoguessr.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddFriendScreen(
@@ -55,7 +58,7 @@ fun AddFriendScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dodaj znajomego") },
+                title = { Text(stringResource(R.string.add_a_friend)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -82,7 +85,7 @@ fun AddFriendScreen(
                     value = uiState.query,
                     onValueChange = viewModel::onQueryChange,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Nickname albo nazwa użytkownika") },
+                    label = { Text(stringResource(R.string.search_users_placeholder)) },
                     singleLine = true
                 )
             }
@@ -117,7 +120,7 @@ fun AddFriendScreen(
             ) {
                 item {
                     Text(
-                        text = "Brak pasujących użytkowników",
+                        text = stringResource(R.string.no_matching_users),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -181,7 +184,7 @@ private fun AddFriendUserItem(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "${user.points} pkt",
+                    text = stringResource(R.string.points_suffix, user.points),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -189,10 +192,16 @@ private fun AddFriendUserItem(
 
             Button(
                 onClick = onAddClick,
-                enabled = !user.requestSent,
+                enabled = !user.requestSent && !user.isSending,
                 shape = RoundedCornerShape(12.dp)
             ) {
-                if (!user.requestSent) {
+                if (user.isSending) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else if (!user.requestSent) {
                     Icon(
                         Icons.Default.PersonAdd,
                         contentDescription = null,
@@ -201,9 +210,9 @@ private fun AddFriendUserItem(
 
                     Spacer(modifier = Modifier.width(6.dp))
 
-                    Text("Dodaj")
+                    Text(stringResource(R.string.add))
                 } else {
-                    Text("Wysłano")
+                    Text(stringResource(R.string.request_sent))
                 }
             }
         }

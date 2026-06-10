@@ -18,7 +18,8 @@ data class AddFriendUserUI(
     val nickname: String,
     val profileImageUrl: String?,
     val points: Int,
-    val requestSent: Boolean = false
+    val requestSent: Boolean = false,
+    val isSending: Boolean = false
 )
 
 data class AddFriendUiState(
@@ -65,7 +66,7 @@ class AddFriendViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = e.message ?: "Nie udało się pobrać użytkowników"
+                        errorMessage = e.message ?: "Failed to load users"
                     )
                 }
             }
@@ -83,13 +84,23 @@ class AddFriendViewModel @Inject constructor(
 
     fun sendFriendRequest(userUid: String) {
         viewModelScope.launch {
+            _uiState.update { state ->
+                val updatedUsers = state.users.map { user ->
+                    if (user.uid == userUid) user.copy(isSending = true) else user
+                }
+                state.copy(
+                    users = updatedUsers,
+                    filteredUsers = filterUsers(updatedUsers, state.query)
+                )
+            }
+
             try {
                 friendRepository.sendFriendRequest(userUid)
 
                 _uiState.update { state ->
                     val updatedUsers = state.users.map { user ->
                         if (user.uid == userUid) {
-                            user.copy(requestSent = true)
+                            user.copy(requestSent = true, isSending = false)
                         } else {
                             user
                         }
@@ -102,9 +113,14 @@ class AddFriendViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        errorMessage = e.message ?: "Nie udało się wysłać zaproszenia"
+                _uiState.update { state ->
+                    val updatedUsers = state.users.map { user ->
+                        if (user.uid == userUid) user.copy(isSending = false) else user
+                    }
+                    state.copy(
+                        users = updatedUsers,
+                        filteredUsers = filterUsers(updatedUsers, state.query),
+                        errorMessage = e.message ?: "Failed to send invitation"
                     )
                 }
             }
