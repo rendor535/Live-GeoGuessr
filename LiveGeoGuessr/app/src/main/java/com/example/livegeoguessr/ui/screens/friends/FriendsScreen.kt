@@ -110,7 +110,7 @@ fun FriendsScreen(
 
             if (uiState.incomingRequests.isNotEmpty()) {
                 item {
-                    SectionTitle("Zaproszenia do znajomych")
+                    SectionTitle(stringResource(R.string.friend_requests))
                 }
 
                 items(uiState.incomingRequests) { request ->
@@ -128,7 +128,7 @@ fun FriendsScreen(
 
             if (uiState.outgoingRequests.isNotEmpty()) {
                 item {
-                    SectionTitle("Wysłane zaproszenia")
+                    SectionTitle(stringResource(R.string.sent_requests))
                 }
 
                 items(uiState.outgoingRequests) { request ->
@@ -137,13 +137,13 @@ fun FriendsScreen(
             }
 
             item {
-                SectionTitle("Moi znajomi")
+                SectionTitle(stringResource(R.string.my_friends))
             }
 
             if (uiState.friends.isEmpty() && !uiState.isLoading) {
                 item {
                     Text(
-                        text = "Nie masz jeszcze znajomych",
+                        text = stringResource(R.string.no_friends_yet),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -250,7 +250,7 @@ fun FriendItem(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedButton(onClick = onRemoveClick) {
-                    Text("Usuń")
+                    Text(stringResource(R.string.remove))
                 }
             }
         }
@@ -290,7 +290,8 @@ private fun IncomingRequestItem(
                     Text(
                         text = request.displayName,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
@@ -308,7 +309,7 @@ private fun IncomingRequestItem(
                     onClick = onAcceptClick,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Akceptuj")
+                    Text(stringResource(R.string.accept))
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -317,7 +318,7 @@ private fun IncomingRequestItem(
                     onClick = onRejectClick,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Odrzuć")
+                    Text(stringResource(R.string.reject))
                 }
             }
         }
@@ -353,7 +354,8 @@ private fun OutgoingRequestItem(
                 Text(
                     text = request.displayName,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Text(
@@ -364,7 +366,7 @@ private fun OutgoingRequestItem(
             }
 
             Text(
-                text = "Oczekuje",
+                text = stringResource(R.string.pending),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary
             )

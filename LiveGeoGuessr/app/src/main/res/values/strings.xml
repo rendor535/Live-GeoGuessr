@@ -50,6 +50,14 @@
     <string name="send_request_failed">Failed to send request</string>
     <string name="unknown_error">Unknown error</string>
     <string name="friends">Friends</string>
+    <string name="friend_requests">Friend requests</string>
+    <string name="sent_requests">Sent requests</string>
+    <string name="my_friends">My friends</string>
+    <string name="no_friends_yet">No friends yet</string>
+    <string name="remove">Remove</string>
+    <string name="accept">Accept</string>
+    <string name="reject">Reject</string>
+    <string name="pending">Pending</string>
     <string name="posts">Posts</string>
     <string name="guesses">Guesses</string>
     <string name="add_a_friend">Add a Friend</string>
