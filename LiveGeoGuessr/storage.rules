@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isFriend(uid) {
+      return signedIn()
+        && firestore.exists(
+          /databases/(default)/documents/users/$(request.auth.uid)/friends/$(uid)
+        );
+    }
+
+    function isJpeg() {
+      return request.resource.contentType == "image/jpeg";
+    }
+
+    match /posts/{uid}/{fileName} {
+      allow create: if isOwner(uid)
+        && fileName.matches("^[A-Za-z0-9_-]+\\.jpg$")
+        && isJpeg()
+        && request.resource.size < 10 * 1024 * 1024;
+
+      allow read: if isOwner(uid) || isFriend(uid);
+
+      allow update, delete: if false;
+    }
+
+    match /avatars/{uid}/{fileName} {
+      allow create, update: if isOwner(uid)
+        && fileName.matches("^profile_[0-9]+\\.jpg$")
+        && isJpeg()
+        && request.resource.size < 10 * 1024 * 1024;
+
+      allow read: if signedIn();
+
+      allow delete: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
