@@ -18,6 +18,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.livegeoguessr.ui.screens.home.PostItem
 import com.example.livegeoguessr.ui.navigation.Screen
+import androidx.compose.ui.res.stringResource
+import com.example.livegeoguessr.R
+
 @Composable
 fun PostsScreen(
     navController: NavController,
@@ -38,14 +41,14 @@ fun PostsScreen(
 
         uiState.errorMessage != null -> {
             Text(
-                text = uiState.errorMessage ?: "Błąd",
+                text = uiState.errorMessage ?: stringResource(R.string.unknown_error),
                 modifier = Modifier.padding(16.dp)
             )
         }
 
         uiState.posts.isEmpty() -> {
             Text(
-                text = "Nie masz jeszcze żadnych postów.",
+                text = stringResource(R.string.no_posts),
                 modifier = Modifier.padding(16.dp)
             )
         }

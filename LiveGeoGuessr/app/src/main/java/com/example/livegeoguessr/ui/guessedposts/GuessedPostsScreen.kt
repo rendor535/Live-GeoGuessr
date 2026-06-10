@@ -27,6 +27,9 @@ import androidx.navigation.NavController
 import com.example.livegeoguessr.ui.navigation.Screen
 import com.example.livegeoguessr.ui.screens.home.PostItem
 
+import androidx.compose.ui.res.stringResource
+import com.example.livegeoguessr.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuessedPostsScreen(
@@ -67,14 +70,14 @@ fun GuessedPostsScreen(
                         )
 
                         Text(
-                            text = "Brak zgadniętych postów",
+                            text = stringResource(R.string.no_guessed_posts),
                             style = MaterialTheme.typography.headlineSmall,
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Text(
-                            text = "Zgadnięte posty pojawią się tutaj po wysłaniu odpowiedzi.",
+                            text = stringResource(R.string.no_guessed_posts_description),
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onSurfaceVariant

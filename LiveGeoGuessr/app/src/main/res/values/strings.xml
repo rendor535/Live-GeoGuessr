@@ -20,6 +20,8 @@
     <string name="dont_have_account">Don\'t have an account? Register</string>
     <string name="already_have_account">Already have an account? Login</string>
     <string name="no_posts">No posts yet</string>
+    <string name="no_guessed_posts">No guessed posts yet</string>
+    <string name="no_guessed_posts_description">Guessed posts will appear here after you submit an answer.</string>
     <string name="pull_to_refresh_no_posts">Pull down to refresh and see what\'s new! or add a new friend</string>
     <string name="post_image_description">Post image</string>
     <string name="full_screen_image">Full Screen Image</string>
@@ -47,6 +49,7 @@
     <string name="google_login_failed">Google login failed</string>
     <string name="user_not_found">User not found</string>
     <string name="fetch_users_failed">Failed to fetch users</string>
+    <string name="fetch_posts_failed">Failed to fetch posts</string>
     <string name="send_request_failed">Failed to send request</string>
     <string name="unknown_error">Unknown error</string>
     <string name="friends">Friends</string>

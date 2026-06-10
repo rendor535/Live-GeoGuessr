@@ -48,7 +48,7 @@ class PostsViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = PostsUiState(
                     isLoading = false,
-                    errorMessage = e.message ?: "Nie udało się pobrać postów"
+                    errorMessage = e.message ?: "Failed to fetch posts"
                 )
             }
         }
