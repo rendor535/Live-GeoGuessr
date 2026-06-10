@@ -6,5 +6,6 @@ data class Post (
     val user: String,
     val imageUrl: String,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    val authorPhotoUrl: String? = null
 )

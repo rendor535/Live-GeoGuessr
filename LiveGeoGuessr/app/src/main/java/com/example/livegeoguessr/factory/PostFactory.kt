@@ -12,6 +12,7 @@ object PostFactory {
         val longitude = document.getDouble("longitude") ?: return null
         val user = document.getString("user") ?: ""
         val authorUid = document.getString("userId") ?: ""
+        val authorPhotoUrl = document.getString("authorPhotoUrl")
 
         return Post(
             id = document.id,
@@ -19,13 +20,15 @@ object PostFactory {
             user = user,
             imageUrl = imageUrl,
             latitude = latitude,
-            longitude = longitude
+            longitude = longitude,
+            authorPhotoUrl = authorPhotoUrl
         )
     }
 
     fun toFirestoreMap(
         userId: String,
         userName: String,
+        userPhotoUrl: String?,
         imageUrl: String,
         latitude: Double,
         longitude: Double
@@ -33,6 +36,7 @@ object PostFactory {
         return mapOf(
             "userId" to userId,
             "user" to userName,
+            "authorPhotoUrl" to userPhotoUrl,
             "imageUrl" to imageUrl,
             "latitude" to latitude,
             "longitude" to longitude,
