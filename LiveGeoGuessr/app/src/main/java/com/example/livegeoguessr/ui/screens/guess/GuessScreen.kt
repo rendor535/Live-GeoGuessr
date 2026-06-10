@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,7 +31,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.zIndex
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 
 @Composable
 fun GuessScreen(
@@ -144,14 +150,35 @@ fun GuessScreen(
                 Button(
                     onClick = { viewModel.submitGuess(postId) },
                     enabled = !guessUiState.isSubmitting,
+                    shape = androidx.compose.foundation.shape.CircleShape,
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 32.dp)
-                        .zIndex(3f)
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                        .height(40.dp)
+                        .zIndex(3f),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                 ) {
-                    Text(
-                        text = if (guessUiState.isSubmitting) "Wysyłanie..." else stringResource(R.string.confirm_guess)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (guessUiState.isSubmitting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (guessUiState.isSubmitting) stringResource(R.string.submitting) else stringResource(R.string.confirm_guess),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 

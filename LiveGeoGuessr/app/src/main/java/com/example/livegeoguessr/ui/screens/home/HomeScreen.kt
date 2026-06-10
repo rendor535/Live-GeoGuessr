@@ -198,7 +198,7 @@ fun PostItem(
                 ) {
                     distanceMeters?.let {
                         Text(
-                            text = "Odległość: %.2f km".format(it / 1000.0),
+                            text = stringResource(R.string.distance_result, it / 1000.0),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -215,7 +215,7 @@ fun PostItem(
 
                     points?.let {
                         Text(
-                            text = "$it pkt",
+                            text = stringResource(R.string.points_suffix, it),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Bold

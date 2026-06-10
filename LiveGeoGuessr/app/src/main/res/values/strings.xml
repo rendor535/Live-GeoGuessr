@@ -26,7 +26,8 @@
     <string name="post_image_description">Post image</string>
     <string name="full_screen_image">Full Screen Image</string>
     <string name="preview_image">Preview</string>
-    <string name="confirm_guess">Confirm Guess</string>
+    <string name="confirm_guess">Confirm</string>
+    <string name="submitting">Submitting&#8230;</string>
     <string name="distance_result">Distance: %1$.2f km</string>
     <string name="your_guess">Your Guess</string>
     <string name="actual_location">Actual Location</string>
@@ -80,4 +81,9 @@
     <string name="gps_required_message">GPS is turned off. Please turn it on to tag your photo.</string>
     <string name="turn_on_gps">Turn on GPS</string>
     <string name="scored_points">Scored %1$d points</string>
+    <string name="already_guessed">You have already guessed this post.</string>
+    <string name="select_location_first">Please select a location on the map first.</string>
+    <string name="must_be_logged_in">You must be logged in.</string>
+    <string name="post_not_found">Post not found.</string>
+    <string name="submit_guess_failed">Failed to submit guess.</string>
 </resources>

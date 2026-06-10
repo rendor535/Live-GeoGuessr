@@ -104,7 +104,7 @@ class GuessViewModel @Inject constructor(
         if (state.hasAlreadyGuessed) {
             _guessUiState.value =
                 state.copy(
-                    errorMessage = "Ten post został już zgadnięty."
+                    errorMessage = "This post has already been guessed."
                 )
             return
         }
@@ -115,7 +115,7 @@ class GuessViewModel @Inject constructor(
         if (latitude == null || longitude == null) {
             _guessUiState.value =
                 state.copy(
-                    errorMessage = "Najpierw wybierz miejsce na mapie."
+                    errorMessage = "Please select a location on the map first."
                 )
             return
         }
@@ -151,17 +151,17 @@ class GuessViewModel @Inject constructor(
                     when (e.code) {
 
                         FirebaseFunctionsException.Code.ALREADY_EXISTS ->
-                            "Ten post został już zgadnięty."
+                            "This post has already been guessed."
 
                         FirebaseFunctionsException.Code.UNAUTHENTICATED ->
-                            "Musisz być zalogowany."
+                            "You must be logged in."
 
                         FirebaseFunctionsException.Code.NOT_FOUND ->
-                            "Nie znaleziono posta."
+                            "Post not found."
 
                         else ->
                             e.message
-                                ?: "Nie udało się wysłać zgadnięcia."
+                                ?: "Failed to submit guess."
                     }
 
                 _guessUiState.value =
@@ -176,7 +176,7 @@ class GuessViewModel @Inject constructor(
                     _guessUiState.value.copy(
                         isSubmitting = false,
                         errorMessage = e.message
-                            ?: "Nieznany błąd."
+                            ?: "Unknown error."
                     )
             }
         }
