@@ -41,7 +41,7 @@ class HomeViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Nie udało się pobrać postów"
+                        error = e.message ?: "Failed to fetch posts"
                     )
                 }
             }

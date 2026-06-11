@@ -44,7 +44,7 @@ fun GuessScreen(
     imageUrl: String,
     viewModel: GuessViewModel = hiltViewModel()
 ) {
-    var isImageFullScreen by remember { mutableStateOf(false) }
+    var isImageFullScreen by remember { mutableStateOf(true) }
 
     val useMiles by viewModel.useMiles.collectAsState()
     val guessUiState by viewModel.guessUiState.collectAsState()

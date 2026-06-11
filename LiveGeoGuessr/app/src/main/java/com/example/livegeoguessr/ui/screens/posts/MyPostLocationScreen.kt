@@ -28,7 +28,7 @@ fun MyPostLocationScreen(
     latitude: Double,
     longitude: Double
 ) {
-    var isImageFullScreen by remember { mutableStateOf(false) }
+    var isImageFullScreen by remember { mutableStateOf(true) }
 
     val postLocation = remember(latitude, longitude) {
         GeoPoint(latitude, longitude)
