@@ -75,14 +75,24 @@ fun AppNavGraph(
         composable(
             route = Screen.MyPostLocation.route,
             arguments = listOf(
-                navArgument("imageUrl") { type = NavType.StringType },
-                navArgument("lat") { type = NavType.StringType },
-                navArgument("lon") { type = NavType.StringType }
+                navArgument("imageUrl") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+                navArgument("lat") {
+                    type = NavType.StringType
+                    defaultValue = "0.0"
+                },
+                navArgument("lon") {
+                    type = NavType.StringType
+                    defaultValue = "0.0"
+                }
             )
         ) { backStackEntry ->
-            val imageUrl = Uri.decode(
-                backStackEntry.arguments?.getString("imageUrl") ?: ""
-            )
+
+            val imageUrl = backStackEntry.arguments
+                ?.getString("imageUrl")
+                .orEmpty()
 
             val lat = backStackEntry.arguments
                 ?.getString("lat")
