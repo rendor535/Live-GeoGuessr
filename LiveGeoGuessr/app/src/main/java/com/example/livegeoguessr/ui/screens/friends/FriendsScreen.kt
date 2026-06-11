@@ -40,6 +40,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -61,12 +65,14 @@ fun FriendsScreen(
                 title = { Text(stringResource(R.string.friends)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(
+                            R.string.go_back
+                        ))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.loadFriendsData() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -178,8 +184,14 @@ fun FriendItem(
     friend: FriendUI,
     onRemoveClick: () -> Unit
 ) {
+    val friendName = stringResource(R.string.friend)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {
+                contentDescription = friendName
+                role = Role.Tab
+            },
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f),
         tonalElevation = 2.dp
@@ -249,8 +261,19 @@ fun FriendItem(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedButton(onClick = onRemoveClick) {
-                    Text(stringResource(R.string.remove))
+                OutlinedButton(
+                    onClick = onRemoveClick,
+                    enabled = !friend.isLoading
+                ) {
+                    if (friend.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Text(stringResource(R.string.remove))
+                    }
                 }
             }
         }
@@ -263,8 +286,14 @@ private fun IncomingRequestItem(
     onAcceptClick: () -> Unit,
     onRejectClick: () -> Unit
 ) {
+    val incomingRequestFrom = stringResource(R.string.friend_request_from)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {
+                contentDescription = incomingRequestFrom
+                role = Role.Tab
+            },
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f),
         tonalElevation = 2.dp
@@ -307,18 +336,36 @@ private fun IncomingRequestItem(
             Row {
                 Button(
                     onClick = onAcceptClick,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = !request.isProcessing
                 ) {
-                    Text(stringResource(R.string.accept))
+                    if (request.isProcessing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Text(stringResource(R.string.accept))
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
 
                 OutlinedButton(
                     onClick = onRejectClick,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = !request.isProcessing
                 ) {
-                    Text(stringResource(R.string.reject))
+                    if (request.isProcessing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Text(stringResource(R.string.reject))
+                    }
                 }
             }
         }
@@ -329,8 +376,14 @@ private fun IncomingRequestItem(
 private fun OutgoingRequestItem(
     request: FriendRequestUI
 ) {
+    val friendRequestTo = stringResource(R.string.friend_request_to)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {
+                contentDescription = friendRequestTo
+                role = Role.Tab
+            },
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f),
         tonalElevation = 2.dp

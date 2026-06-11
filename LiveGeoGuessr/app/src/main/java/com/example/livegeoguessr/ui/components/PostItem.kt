@@ -11,6 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -25,6 +30,7 @@ fun PostItem(
     points: Int? = null,
     onClick: (() -> Unit)? = null
 ) {
+    val postByText = stringResource(R.string.post_by, post.user)
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -35,7 +41,11 @@ fun PostItem(
                 } else {
                     Modifier
                 }
-            ),
+            )
+            .semantics(mergeDescendants = true) {
+                contentDescription = postByText
+                role = Role.Button
+            },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
         ),
@@ -52,7 +62,7 @@ fun PostItem(
                 if (!post.authorPhotoUrl.isNullOrBlank()) {
                     AsyncImage(
                         model = post.authorPhotoUrl,
-                        contentDescription = "Zdjęcie profilowe",
+                        contentDescription = null,
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape),
@@ -67,7 +77,7 @@ fun PostItem(
                     ) {
                         Text(
                             text = post.user.firstOrNull()?.toString() ?: "",
-                            modifier = Modifier.align(Alignment.Center),
+                            modifier = Modifier.align(Alignment.Center).semantics{ hideFromAccessibility() },
                             color = MaterialTheme.colorScheme.onPrimary,
                             style = MaterialTheme.typography.titleMedium
                         )
@@ -78,6 +88,7 @@ fun PostItem(
 
                 Text(
                     text = post.user,
+                    modifier = Modifier.semantics{ hideFromAccessibility() },
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold
@@ -104,6 +115,7 @@ fun PostItem(
 
                         Text(
                             text = "•",
+                            modifier = Modifier.semantics{ hideFromAccessibility() },
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
@@ -123,7 +135,7 @@ fun PostItem(
 
             AsyncImage(
                 model = post.imageUrl,
-                contentDescription = stringResource(R.string.post_image_description),
+                contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(160.dp)

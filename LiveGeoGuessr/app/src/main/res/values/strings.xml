@@ -86,4 +86,13 @@
     <string name="must_be_logged_in">You must be logged in.</string>
     <string name="post_not_found">Post not found.</string>
     <string name="submit_guess_failed">Failed to submit guess.</string>
+    <string name="post_by">Post by %1$s</string>
+    <string name="friend_request_from">Friend request from</string>
+    <string name="friend">Friend</string>
+    <string name="friend_request_to">Friend request to</string>
+    <string name="go_back">Go back</string>
+    <string name="refresh">Refresh</string>
+    <string name="close">Close</string>
+    <string name="user">User</string>
+    <string name="profile_picture">Profile picture</string>
 </resources>

@@ -88,7 +88,7 @@ fun ProfileScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
-                Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+                Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings), tint = MaterialTheme.colorScheme.onSurface)
             }
         }
 
@@ -114,6 +114,7 @@ fun ProfileScreen(
                 
                 ProfileImage(
                     imageUrl = uiState.profileImageUrl,
+                    contentDescription = stringResource(R.string.profile_picture),
                     modifier = Modifier
                         .padding(8.dp)
                         .fillMaxSize()
@@ -125,7 +126,12 @@ fun ProfileScreen(
                 Surface(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .offset { androidx.compose.ui.unit.IntOffset(0, (4.dp + badgeBounce.dp).roundToPx()) }
+                        .offset {
+                            androidx.compose.ui.unit.IntOffset(
+                                0,
+                                (4.dp + badgeBounce.dp).roundToPx()
+                            )
+                        }
                         .height(32.dp)
                         .width(80.dp),
                     shape = RoundedCornerShape(16.dp),
