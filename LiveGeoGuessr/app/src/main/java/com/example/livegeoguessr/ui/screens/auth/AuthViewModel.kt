@@ -38,9 +38,9 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorResId = null) }
             val success = if (_uiState.value.isLoginMode) {
-                true //authRepository.login(email, password)
+                authRepository.login(email, password)
             } else {
-                true //authRepository.register(email, password)
+                authRepository.register(email, password)
             }
 
             if (success) {

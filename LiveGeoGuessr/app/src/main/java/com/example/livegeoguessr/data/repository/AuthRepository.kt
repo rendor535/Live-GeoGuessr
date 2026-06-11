@@ -27,6 +27,35 @@ class AuthRepository @Inject constructor() {
         return auth.currentUser?.uid
     }
 
+    suspend fun login(email: String, password: String): Boolean {
+        return try {
+            auth.signInWithEmailAndPassword(
+                email.trim(),
+                password
+            ).await()
+
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun register(email: String, password: String): Boolean {
+        return try {
+            val result = auth.createUserWithEmailAndPassword(
+                email.trim(),
+                password
+            ).await()
+
+            result.user?.let { firebaseUser ->
+                UserRepository().createUserIfNotExists(firebaseUser)
+            }
+
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
     suspend fun loginWithGoogle(context: Context) {
         val credentialManager = CredentialManager.create(context)
 
