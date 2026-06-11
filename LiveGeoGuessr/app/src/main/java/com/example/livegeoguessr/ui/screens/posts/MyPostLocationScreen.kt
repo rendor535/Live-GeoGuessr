@@ -28,7 +28,7 @@ fun MyPostLocationScreen(
     latitude: Double,
     longitude: Double
 ) {
-    var isImageFullScreen by remember { mutableStateOf(true) }
+    var isImageFullScreen by remember { mutableStateOf(false) }
 
     val postLocation = remember(latitude, longitude) {
         GeoPoint(latitude, longitude)
@@ -76,12 +76,21 @@ fun MyPostLocationScreen(
                 .clip(RoundedCornerShape(8.dp))
                 .clickable { isImageFullScreen = true }
         }
-
+        LaunchedEffect(imageUrl) {
+            android.util.Log.d("MyPostLocationScreen", "imageUrl=$imageUrl")
+        }
         AsyncImage(
-            model = imageUrl,
+            model = imageUrl.takeIf { it.isNotBlank() },
             contentDescription = stringResource(R.string.post_image_description),
             modifier = imageModifier,
-            contentScale = if (isImageFullScreen) ContentScale.Fit else ContentScale.Crop
+            contentScale = if (isImageFullScreen) ContentScale.Fit else ContentScale.Crop,
+            onError = {
+                android.util.Log.e(
+                    "MyPostLocationScreen",
+                    "Image load failed: $imageUrl",
+                    it.result.throwable
+                )
+            }
         )
     }
 }
