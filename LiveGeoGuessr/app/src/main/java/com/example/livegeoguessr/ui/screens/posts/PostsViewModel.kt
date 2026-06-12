@@ -15,7 +15,9 @@ import javax.inject.Inject
 data class PostsUiState(
     val isLoading: Boolean = false,
     val posts: List<Post> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isDeleting: Boolean = false,
+    val deleteErrorMessage: String? = null
 )
 
 @HiltViewModel
@@ -52,6 +54,53 @@ class PostsViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         errorMessage = e.message ?: "Failed to fetch posts"
+                    )
+                }
+            }
+        }
+    }
+
+    fun deletePost(
+        postId: String,
+        onDeleted: () -> Unit
+    ) {
+        if (_uiState.value.isDeleting) {
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isDeleting = true,
+                    deleteErrorMessage = null
+                )
+            }
+
+            try {
+                postRepository.deleteMyPost(postId)
+
+                _uiState.update { state ->
+                    state.copy(
+                        isDeleting = false,
+                        posts = state.posts.filterNot { post ->
+                            post.id == postId
+                        }
+                    )
+                }
+
+                onDeleted()
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    "PostsViewModel",
+                    "Failed to delete post: $postId",
+                    e
+                )
+
+                _uiState.update {
+                    it.copy(
+                        isDeleting = false,
+                        deleteErrorMessage = e.message
+                            ?: "Failed to delete post"
                     )
                 }
             }

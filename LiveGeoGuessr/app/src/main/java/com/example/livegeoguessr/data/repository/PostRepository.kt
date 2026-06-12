@@ -18,6 +18,8 @@ import javax.inject.Singleton
 import com.example.livegeoguessr.domain.model.GuessedPost
 import com.google.firebase.firestore.FieldPath
 import com.example.livegeoguessr.domain.model.PublicUser
+import com.google.firebase.storage.StorageException
+
 @Singleton
 class PostRepository @Inject constructor(
     private val auth: FirebaseAuth,
@@ -319,6 +321,61 @@ class PostRepository @Inject constructor(
             authorPhotoUrl = userPhotoUrl
         )
     }
+
+    suspend fun deleteMyPost(postId: String) {
+        val currentUser = auth.currentUser
+            ?: throw IllegalStateException("User is not logged in")
+
+        val userId = currentUser.uid
+
+        val postReference = firestore
+            .collection("posts")
+            .document(postId)
+
+        val userReference = firestore
+            .collection("users")
+            .document(userId)
+
+        firestore.runTransaction { transaction ->
+            val postSnapshot = transaction.get(postReference)
+
+            if (!postSnapshot.exists()) {
+                throw IllegalStateException("Post does not exist")
+            }
+
+            val postOwnerUid = postSnapshot.getString("userId")
+
+            if (postOwnerUid != userId) {
+                throw SecurityException("You cannot delete another user's post")
+            }
+
+            transaction.delete(postReference)
+
+            transaction.update(
+                userReference,
+                mapOf(
+                    "stats.postsCount" to FieldValue.increment(-1L),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+        }.await()
+
+        try {
+            storage.reference
+                .child("posts/$userId/$postId.jpg")
+                .delete()
+                .await()
+        } catch (e: StorageException) {
+            if (e.errorCode != StorageException.ERROR_OBJECT_NOT_FOUND) {
+                android.util.Log.e(
+                    TAG,
+                    "Post deleted, but image deletion failed",
+                    e
+                )
+            }
+        }
+    }
+
     private fun Bitmap.toJpegByteArray(): ByteArray {
         val outputStream = ByteArrayOutputStream()
         compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
