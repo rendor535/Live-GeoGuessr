@@ -31,15 +31,20 @@ sealed class Screen(val route: String, val icon: ImageVector) {
     }
 
     object MyPostLocation : Screen(
-        "my_post_location?imageUrl={imageUrl}&lat={lat}&lon={lon}",
+        "my_post_location?postId={postId}&imageUrl={imageUrl}&lat={lat}&lon={lon}",
         Icons.Default.Home
     ) {
         fun createRoute(
+            postId: String,
             imageUrl: String,
             lat: Double,
             lon: Double
         ): String {
-            return "my_post_location?imageUrl=${Uri.encode(imageUrl)}&lat=$lat&lon=$lon"
+            return "my_post_location" +
+                    "?postId=${Uri.encode(postId)}" +
+                    "&imageUrl=${Uri.encode(imageUrl)}" +
+                    "&lat=$lat" +
+                    "&lon=$lon"
         }
     }
 }

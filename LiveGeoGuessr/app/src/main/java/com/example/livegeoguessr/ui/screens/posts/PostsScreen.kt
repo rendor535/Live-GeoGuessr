@@ -59,17 +59,21 @@ fun PostsScreen(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(uiState.posts) { post ->
+                items(
+                    items = uiState.posts,
+                    key = { post -> post.id }
+                ) { post ->
                     PostItem(
                         post = post,
                         onClick = {
-                            navController.navigate(
-                                Screen.MyPostLocation.createRoute(
-                                    imageUrl = post.imageUrl,
-                                    lat = post.latitude,
-                                    lon = post.longitude
-                                )
+                            val route = Screen.MyPostLocation.createRoute(
+                                postId = post.id,
+                                imageUrl = post.imageUrl,
+                                lat = post.latitude,
+                                lon = post.longitude
                             )
+
+                            navController.navigate(route)
                         }
                     )
                 }
