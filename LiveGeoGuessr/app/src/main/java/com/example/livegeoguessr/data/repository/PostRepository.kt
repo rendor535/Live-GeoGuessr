@@ -328,23 +328,51 @@ class PostRepository @Inject constructor(
 
         val userId = currentUser.uid
 
-        firestore
+        val postReference = firestore
             .collection("posts")
             .document(postId)
-            .delete()
-            .await()
+
+        val userReference = firestore
+            .collection("users")
+            .document(userId)
+
+        firestore.runTransaction { transaction ->
+            val postSnapshot = transaction.get(postReference)
+
+            if (!postSnapshot.exists()) {
+                throw IllegalStateException("Post does not exist")
+            }
+
+            val postOwnerUid = postSnapshot.getString("userId")
+
+            if (postOwnerUid != userId) {
+                throw SecurityException("You cannot delete another user's post")
+            }
+
+            transaction.delete(postReference)
+
+            transaction.update(
+                userReference,
+                mapOf(
+                    "stats.postsCount" to FieldValue.increment(-1L),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+        }.await()
 
         try {
             storage.reference
                 .child("posts/$userId/$postId.jpg")
                 .delete()
                 .await()
-        } catch (e: Exception) {
-            android.util.Log.e(
-                TAG,
-                "Post document deleted, but image deletion failed",
-                e
-            )
+        } catch (e: StorageException) {
+            if (e.errorCode != StorageException.ERROR_OBJECT_NOT_FOUND) {
+                android.util.Log.e(
+                    TAG,
+                    "Post deleted, but image deletion failed",
+                    e
+                )
+            }
         }
     }
 
