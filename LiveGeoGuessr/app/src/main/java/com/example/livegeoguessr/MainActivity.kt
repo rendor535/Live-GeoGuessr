@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.compose.runtime.State
 import androidx.compose.runtime.produceState
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -110,7 +111,7 @@ suspend fun isInternetReachable(): Boolean {
 }
 @Composable
 fun rememberInternetState(): State<Boolean> {
-    return produceState(initialValue = false) {
+    return produceState(initialValue = true) {
         while (true) {
             value = withContext(Dispatchers.IO) {
                 isInternetReachable()
@@ -126,6 +127,7 @@ fun ConnectionStatus() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .zIndex(10f),
         contentAlignment = Alignment.TopCenter
     ) {
