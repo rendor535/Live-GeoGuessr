@@ -3,6 +3,13 @@ import {onRequest} from "firebase-functions/https";
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
+import {getAuth} from "firebase-admin/auth";
+import {
+  DocumentReference,
+  FieldValue,
+  getFirestore,
+} from "firebase-admin/firestore";
+import {getStorage} from "firebase-admin/storage";
 
 admin.initializeApp();
 
@@ -703,8 +710,320 @@ export const submitGuess = onCall(
 
     return result;
   }
-
-
 );
 
+const FRIEND_REQUESTS_COLLECTION = "friendRequests";
+
+
+async function deleteStoragePrefix(prefix: string): Promise<void> {
+  const bucket = getStorage().bucket();
+  const [files] = await bucket.getFiles({prefix});
+
+  const batchSize = 50;
+
+  for (let index = 0; index < files.length; index += batchSize) {
+    const batch = files.slice(index, index + batchSize);
+
+    await Promise.all(
+      batch.map(async (file) => {
+        await file.delete();
+      }),
+    );
+  }
+}
+
+async function deleteDocumentReferences(
+  references: DocumentReference[],
+): Promise<void> {
+  const db = getFirestore();
+
+  // Usuwa duplikaty po pełnej ścieżce dokumentu.
+  const uniqueReferences = new Map<string, DocumentReference>();
+
+  for (const reference of references) {
+    uniqueReferences.set(reference.path, reference);
+  }
+
+  const bulkWriter = db.bulkWriter();
+
+  for (const reference of uniqueReferences.values()) {
+    bulkWriter.delete(reference);
+  }
+
+  await bulkWriter.close();
+}
+
+async function refreshFriendStats(userUids: Set<string>): Promise<void> {
+  const db = getFirestore();
+
+  for (const uid of userUids) {
+    const userReference = db.collection("users").doc(uid);
+    const userSnapshot = await userReference.get();
+
+    if (!userSnapshot.exists) {
+      continue;
+    }
+
+    const friendsSnapshot = await userReference
+      .collection("friends")
+      .get();
+
+    await userReference.update({
+      "stats.friendsCount": friendsSnapshot.size,
+      "updatedAt": FieldValue.serverTimestamp(),
+    });
+  }
+}
+
+async function refreshGuessStats(userUids: Set<string>): Promise<void> {
+  const db = getFirestore();
+
+  for (const uid of userUids) {
+    const userReference = db.collection("users").doc(uid);
+    const userSnapshot = await userReference.get();
+
+    if (!userSnapshot.exists) {
+      continue;
+    }
+
+    const guessesSnapshot = await db
+      .collection("guesses")
+      .where("userUid", "==", uid)
+      .get();
+
+    let pointsTotal = 0;
+    let bestGuessMeters: number | null = null;
+
+    for (const guessDocument of guessesSnapshot.docs) {
+      const points = guessDocument.get("points");
+      const distanceMeters = guessDocument.get("distanceMeters");
+
+      if (typeof points === "number") {
+        pointsTotal += points;
+      }
+
+      if (typeof distanceMeters === "number") {
+        if (
+          bestGuessMeters === null ||
+          distanceMeters < bestGuessMeters
+        ) {
+          bestGuessMeters = distanceMeters;
+        }
+      }
+    }
+
+    await userReference.update({
+      "stats.guessesCount": guessesSnapshot.size,
+      "stats.pointsTotal": pointsTotal,
+      "stats.bestGuessMeters": bestGuessMeters,
+      "updatedAt": FieldValue.serverTimestamp(),
+    });
+  }
+}
+
+export const deleteAccount = onCall(
+  {
+    region: "us-central1",
+    timeoutSeconds: 540,
+    memory: "512MiB",
+  },
+  async (request) => {
+    const auth = request.auth;
+
+    if (!auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "User must be authenticated.",
+      );
+    }
+
+    const uid = auth.uid;
+
+    if (request.data?.confirm !== true) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Account deletion was not confirmed."
+      );
+    }
+
+    const db = getFirestore();
+    const userReference = db.collection("users").doc(uid);
+
+    try {
+      /*
+       * Najpierw pobieramy wszystkie dane. Dzięki temu nadal znamy
+       * listę znajomych i postów, zanim dokumenty zostaną usunięte.
+       */
+      const [
+        postsSnapshot,
+        ownGuessesSnapshot,
+        sentRequestsSnapshot,
+        receivedRequestsSnapshot,
+        ownFriendsSnapshot,
+      ] = await Promise.all([
+        db.collection("posts")
+          .where("userId", "==", uid)
+          .get(),
+
+        db.collection("guesses")
+          .where("userUid", "==", uid)
+          .get(),
+
+        db.collection(FRIEND_REQUESTS_COLLECTION)
+          .where("fromUid", "==", uid)
+          .get(),
+
+        db.collection(FRIEND_REQUESTS_COLLECTION)
+          .where("toUid", "==", uid)
+          .get(),
+
+        userReference.collection("friends").get(),
+      ]);
+
+      const postIds = postsSnapshot.docs.map(
+        (document) => document.id,
+      );
+
+      /*
+       * Usuwamy również zgadnięcia innych użytkowników dotyczące
+       * postów, które zaraz przestaną istnieć.
+       */
+      const guessesForDeletedPostsSnapshots = await Promise.all(
+        postIds.map((postId) =>
+          db.collection("guesses")
+            .where("postId", "==", postId)
+            .get(),
+        ),
+      );
+
+      const friendUids = new Set<string>();
+
+      for (const friendDocument of ownFriendsSnapshot.docs) {
+        const friendUid =
+          friendDocument.get("uid") ?? friendDocument.id;
+
+        if (
+          typeof friendUid === "string" &&
+          friendUid.length > 0
+        ) {
+          friendUids.add(friendUid);
+        }
+      }
+
+      const usersWithChangedGuessStats = new Set<string>();
+
+      for (const snapshot of guessesForDeletedPostsSnapshots) {
+        for (const guessDocument of snapshot.docs) {
+          const guessUserUid = guessDocument.get("userUid");
+
+          if (
+            typeof guessUserUid === "string" &&
+            guessUserUid !== uid
+          ) {
+            usersWithChangedGuessStats.add(guessUserUid);
+          }
+        }
+      }
+
+      /*
+       * Storage usuwamy przed Firebase Authentication.
+       * Gdyby wystąpił błąd, konto Auth nadal istnieje i operację
+       * można powtórzyć.
+       */
+      await Promise.all([
+        deleteStoragePrefix(`avatars/${uid}/`),
+        deleteStoragePrefix(`posts/${uid}/`),
+      ]);
+
+      const referencesToDelete: DocumentReference[] = [];
+
+      // Posty użytkownika.
+      for (const document of postsSnapshot.docs) {
+        referencesToDelete.push(document.ref);
+      }
+
+      // Wszystkie zgadnięcia wykonane przez użytkownika.
+      for (const document of ownGuessesSnapshot.docs) {
+        referencesToDelete.push(document.ref);
+      }
+
+      // Zgadnięcia odnoszące się do jego usuwanych postów.
+      for (const snapshot of guessesForDeletedPostsSnapshots) {
+        for (const document of snapshot.docs) {
+          referencesToDelete.push(document.ref);
+        }
+      }
+
+      // Wysłane requesty.
+      for (const document of sentRequestsSnapshot.docs) {
+        referencesToDelete.push(document.ref);
+      }
+
+      // Odebrane i zaakceptowane requesty.
+      for (const document of receivedRequestsSnapshot.docs) {
+        referencesToDelete.push(document.ref);
+      }
+
+      // Własna podkolekcja friends.
+      for (const document of ownFriendsSnapshot.docs) {
+        referencesToDelete.push(document.ref);
+      }
+
+      // Wpis użytkownika w podkolekcjach jego znajomych.
+      for (const friendUid of friendUids) {
+        referencesToDelete.push(
+          db.collection("users")
+            .doc(friendUid)
+            .collection("friends")
+            .doc(uid),
+        );
+      }
+
+      // Dokument użytkownika usuwamy po dokumentach podkolekcji.
+      referencesToDelete.push(userReference);
+
+      await deleteDocumentReferences(referencesToDelete);
+
+      /*
+       * Przeliczamy statystyki na podstawie aktualnego stanu bazy,
+       * zamiast wykonywać increment(-1). Dzięki temu ponowne
+       * wywołanie funkcji nie odejmie wartości drugi raz.
+       */
+      await refreshFriendStats(friendUids);
+
+      await refreshGuessStats(usersWithChangedGuessStats);
+
+      /*
+       * Firebase Authentication zawsze na końcu.
+       * Po tym użytkownik nie może już ponownie wywołać funkcji.
+       */
+      await getAuth().deleteUser(uid);
+
+      logger.info("Account deleted", {
+        uid,
+        deletedPosts: postsSnapshot.size,
+        deletedOwnGuesses: ownGuessesSnapshot.size,
+        deletedFriends: ownFriendsSnapshot.size,
+      });
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      logger.error("Account deletion failed", {
+        uid,
+        error,
+      });
+
+      if (error instanceof HttpsError) {
+        throw error;
+      }
+
+      throw new HttpsError(
+        "internal",
+        "ACCOUNT_DELETION_FAILED",
+      );
+    }
+  },
+);
 

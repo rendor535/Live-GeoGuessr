@@ -95,4 +95,16 @@
     <string name="close">Close</string>
     <string name="user">User</string>
     <string name="profile_picture">Profile picture</string>
+    <string name="delete_account_confirmation_question">
+        Are you sure you want to delete your account?
+    </string>
+    <string name="delete_account_warning">
+        This action is permanent. Your profile, posts, guesses and friends data will be deleted.
+    </string>
+    <string name="type_delete_to_confirm">
+        Type DELETE to confirm
+    </string>
+    <string name="confirm_delete_account">
+        Delete account
+    </string>
 </resources>

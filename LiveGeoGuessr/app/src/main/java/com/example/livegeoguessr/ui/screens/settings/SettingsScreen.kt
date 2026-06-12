@@ -28,7 +28,8 @@ fun SettingsScreen(
     val darkMode by viewModel.darkMode.collectAsState()
     val useMiles by viewModel.useMiles.collectAsState()
     val isLoggedOut by viewModel.isLoggedOut.collectAsState()
-
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteConfirmation by remember { mutableStateOf("") }
     LaunchedEffect(isLoggedOut) {
         if (isLoggedOut) {
             navController.navigate(Screen.Login.route) {
@@ -36,7 +37,58 @@ fun SettingsScreen(
             }
         }
     }
-    
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteDialog = false
+                deleteConfirmation = ""
+            },
+            title = {
+                Text("Delete account")
+            },
+            text = {
+                Column {
+                    Text("Are you sure you want to delete your account?")
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = deleteConfirmation,
+                        onValueChange = { deleteConfirmation = it },
+                        label = {
+                            Text("Type DELETE to confirm")
+                        },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        deleteConfirmation = ""
+                        viewModel.deleteAccount()
+                    },
+                    enabled = deleteConfirmation == "DELETE"
+                ) {
+                    Text(
+                        text = "Delete",
+                        color = Color.Red
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        deleteConfirmation = ""
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
@@ -91,7 +143,9 @@ fun SettingsScreen(
             }
 
             TextButton(
-                onClick = { viewModel.deleteAccount() },
+                onClick = {
+                    showDeleteDialog = true
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
