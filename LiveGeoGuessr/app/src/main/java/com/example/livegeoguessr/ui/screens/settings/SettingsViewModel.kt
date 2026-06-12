@@ -83,8 +83,17 @@ class SettingsViewModel @Inject constructor(
 
     fun deleteAccount() {
         viewModelScope.launch {
-            // TODO: Implement account deletion in AuthRepository
-            logout()
+            try {
+                authRepository.deleteAccount()
+                repository.setLoggedIn(false)
+                _isLoggedOut.value = true
+            } catch (exception: Exception) {
+                android.util.Log.e(
+                    "SettingsViewModel",
+                    "Account deletion failed",
+                    exception
+                )
+            }
         }
     }
 }
