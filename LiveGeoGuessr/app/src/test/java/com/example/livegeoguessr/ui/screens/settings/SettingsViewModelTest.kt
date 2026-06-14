@@ -112,18 +112,20 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `deleteAccount triggers logout flow`() = runTest {
-        coEvery { authRepository.logout() } just Runs
+    fun `deleteAccount deletes account and sets logged out state`() = runTest {
+        coEvery { authRepository.deleteAccount() } just Runs
         coEvery { settingsRepository.setLoggedIn(false) } just Runs
 
         val vm = createViewModel()
-        vm.deleteAccount()
 
+        vm.deleteAccount()
         advanceUntilIdle()
 
         assertTrue(vm.isLoggedOut.value)
 
-        coVerify { authRepository.logout() }
-        coVerify { settingsRepository.setLoggedIn(false) }
+        coVerifyOrder  {
+            authRepository.deleteAccount()
+            settingsRepository.setLoggedIn(false)
+        }
     }
 }
