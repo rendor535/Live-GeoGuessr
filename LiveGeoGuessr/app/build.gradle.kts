@@ -23,7 +23,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner =
+            "com.example.livegeoguessr.HiltTestRunner"
     }
 
     buildTypes {
@@ -60,7 +61,6 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
-    implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.functions)
     //noinspection LoginCredentials
     implementation(libs.androidx.credentials)
