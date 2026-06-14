@@ -19,7 +19,9 @@ import com.example.livegeoguessr.domain.model.GuessedPost
 import com.google.firebase.firestore.FieldPath
 import com.example.livegeoguessr.domain.model.PublicUser
 import com.google.firebase.storage.StorageException
-
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 @Singleton
 class PostRepository @Inject constructor(
     private val auth: FirebaseAuth,
@@ -200,30 +202,36 @@ class PostRepository @Inject constructor(
         }
     }
 
-    private suspend fun getPostsByIds(postIds: List<String>): Map<String, Post> {
+    private suspend fun getPostsByIds(
+        postIds: List<String>
+    ): Map<String, Post> = coroutineScope {
         if (postIds.isEmpty()) {
-            return emptyMap()
+            return@coroutineScope emptyMap()
         }
 
-        val posts = mutableMapOf<String, Post>()
+        val posts = postIds
+            .distinct()
+            .map { postId ->
+                async {
+                    val document = firestore
+                        .collection("posts")
+                        .document(postId)
+                        .get()
+                        .await()
 
-        postIds.distinct().chunked(30).forEach { chunk ->
-            val snapshot = firestore
-                .collection("posts")
-                .whereIn(FieldPath.documentId(), chunk)
-                .get()
-                .await()
-
-            snapshot.documents.forEach { document ->
-                PostFactory.fromDocument(document)?.let { post ->
-                    posts[post.id] = post
+                    if (document.exists()) {
+                        PostFactory.fromDocument(document)
+                    } else {
+                        null
+                    }
                 }
             }
-        }
+            .awaitAll()
+            .filterNotNull()
 
-        val enrichedPosts = attachAuthorProfiles(posts.values.toList())
+        val enrichedPosts = attachAuthorProfiles(posts)
 
-        return enrichedPosts.associateBy { post ->
+        enrichedPosts.associateBy { post ->
             post.id
         }
     }
