@@ -7,6 +7,16 @@ plugins {
     id("jacoco")
 }
 
+val useFirebaseEmulators =
+    providers.gradleProperty("useFirebaseEmulators")
+        .orElse("false")
+        .get()
+
+val firebaseEmulatorHost =
+    providers.gradleProperty("firebaseEmulatorHost")
+        .orElse("10.0.2.2")
+        .get()
+
 android {
     namespace = "com.example.livegeoguessr"
     compileSdk {
@@ -30,6 +40,18 @@ android {
     buildTypes {
         debug {
             enableUnitTestCoverage = true
+
+            buildConfigField(
+                "boolean",
+                "USE_FIREBASE_EMULATORS",
+                useFirebaseEmulators
+            )
+
+            buildConfigField(
+                "String",
+                "FIREBASE_EMULATOR_HOST",
+                "\"$firebaseEmulatorHost\""
+            )
         }
         release {
             isMinifyEnabled = false
@@ -52,6 +74,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -89,6 +112,8 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.hilt.android)

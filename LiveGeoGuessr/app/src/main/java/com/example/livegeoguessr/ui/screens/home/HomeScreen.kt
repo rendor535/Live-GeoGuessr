@@ -37,7 +37,8 @@ import androidx.navigation.NavController
 import com.example.livegeoguessr.R
 import com.example.livegeoguessr.ui.navigation.Screen
 import com.example.livegeoguessr.ui.components.PostItem
-
+import androidx.compose.ui.platform.testTag
+import com.example.livegeoguessr.ui.testing.TestTags
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -49,7 +50,9 @@ fun HomeScreen(
     PullToRefreshBox(
         isRefreshing = uiState.isLoading,
         onRefresh = { viewModel.loadPosts() },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag(TestTags.HOME_SCREEN)
     ) {
         when {
             uiState.isLoading && uiState.posts.isEmpty() -> {
