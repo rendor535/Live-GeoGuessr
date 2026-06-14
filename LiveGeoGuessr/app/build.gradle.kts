@@ -1,3 +1,5 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -125,37 +127,90 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 }
 
-val jacocoTestReport by tasks.registering(JacocoReport::class) {
-    dependsOn("testDebugUnitTest")
+val logicCoverageIncludes = listOf(
+    // ViewModele i klasy pomocnicze Kotlin/coroutines
+    "com/example/livegeoguessr/ui/screens/**/*ViewModel*.class",
+
+    // Repozytoria
+    "com/example/livegeoguessr/data/repository/**/*Repository*.class",
+
+    // Pozostała logika
+    "com/example/livegeoguessr/auth/AuthManager*.class",
+    "com/example/livegeoguessr/factory/PostFactory*.class"
+)
+
+val logicCoverageExcludes = listOf(
+    // Testy
+    "**/*Test*.class",
+
+    // Android/generated
+    "**/R.class",
+    "**/R$*.class",
+    "**/BuildConfig.*",
+    "**/Manifest*.*",
+    "android/**/*.*",
+
+    // Hilt/Dagger
+    "**/*_Factory*.class",
+    "**/*_MembersInjector*.class",
+    "**/*_Module*.class",
+    "**/*_HiltModules*.class",
+    "**/*Hilt*.class",
+    "**/hilt_aggregated_deps/**",
+    "**/dagger/hilt/**",
+
+    // Compose/UI generated
+    "**/*ComposableSingletons*.class",
+    "**/*ScreenKt*.class"
+)
+
+tasks.register<JacocoReport>("logicCoverageReport") {
     group = "Reporting"
-    description = "Generate Jacoco coverage reports for Debug unit tests."
+    description = "Generate Jacoco coverage report only for application logic."
+
+    dependsOn("testDebugUnitTest")
 
     reports {
         xml.required.set(true)
         html.required.set(true)
+        csv.required.set(false)
+
+        html.outputLocation.set(
+            layout.buildDirectory.dir("reports/coverage/logic")
+        )
+
+        xml.outputLocation.set(
+            layout.buildDirectory.file("reports/coverage/logic/report.xml")
+        )
     }
 
-    val fileFilter = listOf(
-        "**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*",
-        "**/*Test*.*", "android/**/*.*", "**/*Hilt*.*", "**/dagger/hilt/**/*.*",
-        "**/*_Factory*.*", "**/*_MembersInjector*.*", "**/*_Module*.*",
-        "**/*_ViewBinding*.*", "**/*Component*.*", "**/*BR*.*"
+    sourceDirectories.setFrom(
+        files("src/main/java", "src/main/kotlin")
     )
 
-    val debugTree = fileTree("${layout.buildDirectory.get()}/intermediates/javac/debug/compileDebugJavaWithJavac/classes") {
-        exclude(fileFilter)
-    }
-    val kotlinDebugTree = fileTree("${layout.buildDirectory.get()}/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes") {
-        exclude(fileFilter)
-    }
-    // Also include other possible Kotlin class locations for completeness
-    val kotlinDebugTreeAlt = fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
-        exclude(fileFilter)
-    }
+    classDirectories.setFrom(
+        files(
+            fileTree("${layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+                include(logicCoverageIncludes)
+                exclude(logicCoverageExcludes)
+            },
+            fileTree("${layout.buildDirectory.get()}/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes") {
+                include(logicCoverageIncludes)
+                exclude(logicCoverageExcludes)
+            },
+            fileTree("${layout.buildDirectory.get()}/intermediates/javac/debug/compileDebugJavaWithJavac/classes") {
+                include(logicCoverageIncludes)
+                exclude(logicCoverageExcludes)
+            }
+        )
+    )
 
-    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
-    classDirectories.setFrom(files(debugTree, kotlinDebugTree, kotlinDebugTreeAlt))
-    executionData.setFrom(fileTree(layout.buildDirectory.get()) {
-        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
-    })
+    executionData.setFrom(
+        fileTree(layout.buildDirectory.get()) {
+            include(
+                "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec",
+                "jacoco/testDebugUnitTest.exec"
+            )
+        }
+    )
 }
