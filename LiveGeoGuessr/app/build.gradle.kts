@@ -83,7 +83,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     testImplementation(libs.junit4)
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.vintage.engine)
+    testRuntimeOnly(libs.junit.vintage.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
