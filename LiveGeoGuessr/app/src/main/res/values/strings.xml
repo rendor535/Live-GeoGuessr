@@ -1,3 +1,110 @@
 <resources>
     <string name="app_name">LiveGeoGuessr</string>
+    <string name="camera_permission_title">Camera Access</string>
+    <string name="camera_permission_rationale">To share amazing locations with the community, we need access to your camera. Snap photos and let others guess where you are!</string>
+    <string name="camera_permission_required">Camera access is required to take and post photos. Please enable it in your device settings.</string>
+    <string name="request_permission">Grant Access</string>
+    <string name="cancel_retake">Cancel and retake</string>
+    <string name="post">Post</string>
+    <string name="confirm_photo">Confirm photo</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="captured_photo">Captured Photo</string>
+    <string name="location_permission_title">Location Access</string>
+    <string name="location_permission_rationale">We need your location to tag your photos accurately and show you where others have been. Help us map the world!</string>
+    <string name="grant_permission">Grant Access</string>
+    <string name="your_location">Your Location</string>
+    <string name="login">Log in</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="dont_have_account">Don\'t have an account? Register</string>
+    <string name="already_have_account">Already have an account? Log in</string>
+    <string name="no_posts">No posts yet</string>
+    <string name="no_guessed_posts">No guessed posts yet</string>
+    <string name="no_guessed_posts_description">Guessed posts will appear here after you submit an answer.</string>
+    <string name="pull_to_refresh_no_posts">Pull down to refresh and see what\'s new! or add a new friend</string>
+    <string name="post_image_description">Post image</string>
+    <string name="full_screen_image">Full Screen Image</string>
+    <string name="preview_image">Preview</string>
+    <string name="confirm_guess">Confirm</string>
+    <string name="submitting">Submitting&#8230;</string>
+    <string name="distance_result">Distance: %1$.2f km</string>
+    <string name="your_guess">Your Guess</string>
+    <string name="actual_location">Actual Location</string>
+    <string name="settings">Settings</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="use_miles">Use Miles</string>
+    <string name="distance_result_miles">Distance: %1$.2f mi</string>
+    <string name="login_with_google">Log in with Google</string>
+    <string name="profile_settings">Profile Settings</string>
+    <string name="change_profile_picture">Change Profile Picture</string>
+    <string name="change_name">Change Name</string>
+    <string name="logout">Log out</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="save">Save</string>
+    <string name="display_name">Display Name</string>
+    <string name="choose_photo_source">Choose photo source</string>
+    <string name="gallery">Gallery</string>
+    <string name="camera">Camera</string>
+    <string name="authentication_failed">Authentication failed</string>
+    <string name="google_login_failed">Google log in failed</string>
+    <string name="user_not_found">User not found</string>
+    <string name="fetch_users_failed">Failed to fetch users</string>
+    <string name="fetch_posts_failed">Failed to fetch posts</string>
+    <string name="send_request_failed">Failed to send request</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="friends">Friends</string>
+    <string name="friend_requests">Friend requests</string>
+    <string name="sent_requests">Sent requests</string>
+    <string name="my_friends">My friends</string>
+    <string name="no_friends_yet">No friends yet</string>
+    <string name="remove">Remove</string>
+    <string name="accept">Accept</string>
+    <string name="reject">Reject</string>
+    <string name="pending">Pending</string>
+    <string name="posts">Posts</string>
+    <string name="guesses">Guesses</string>
+    <string name="add_a_friend">Add a Friend</string>
+    <string name="search_users_placeholder">Nickname or username</string>
+    <string name="no_matching_users">No matching users found</string>
+    <string name="add">Add</string>
+    <string name="request_sent">Sent</string>
+    <string name="online">Online</string>
+    <string name="offline">Offline</string>
+    <string name="points_suffix">%1$d pts</string>
+    <string name="enter_friend_username">Enter your friend\'s username to send a request.</string>
+    <string name="username">Username</string>
+    <string name="username_placeholder">e.g. Explorer123</string>
+    <string name="send_request">Send Request</string>
+    <string name="cancel">Cancel</string>
+    <string name="flip_camera">Flip Camera</string>
+    <string name="gps_required_message">GPS is turned off. Please turn it on to tag your photo.</string>
+    <string name="turn_on_gps">Turn on GPS</string>
+    <string name="scored_points">Scored %1$d points</string>
+    <string name="already_guessed">You have already guessed this post.</string>
+    <string name="select_location_first">Please select a location on the map first.</string>
+    <string name="must_be_logged_in">You must be logged in.</string>
+    <string name="post_not_found">Post not found.</string>
+    <string name="submit_guess_failed">Failed to submit guess.</string>
+    <string name="post_by">Post by %1$s</string>
+    <string name="friend_request_from">Friend request from</string>
+    <string name="friend">Friend</string>
+    <string name="friend_request_to">Friend request to</string>
+    <string name="go_back">Go back</string>
+    <string name="refresh">Refresh</string>
+    <string name="close">Close</string>
+    <string name="user">User</string>
+    <string name="profile_picture">Profile picture</string>
+    <string name="delete_account_confirmation_question">
+        Are you sure you want to delete your account?
+    </string>
+    <string name="delete_account_warning">
+        This action is permanent. Your profile, posts, guesses and friends data will be deleted.
+    </string>
+    <string name="type_delete_to_confirm">
+        Type DELETE to confirm
+    </string>
+    <string name="confirm_delete_account">
+        Delete account
+    </string>
 </resources>

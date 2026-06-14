@@ -2,6 +2,10 @@
 ## A game where you can guess where your friends are (or were)!
 Show off your geo-locating skills to your friends by guessing where they took their picture at and gain points! Or boast where you were last weekend by posting a picture yourself!
 
+Simply log in with your Google account, click the camera button on the bottom and start adding photos for others to guess! Alternatively, click on one of the photos on the main screen, place a waypoint on the map and see if you got what it takes to score the best guesses!
+
+Tags: geoguessr, camera, gps, irl, in-real-live, pictures, friends, map
+
 ### Guess where your friend took the picture and gain points!
 Create an account, add friends and see what they were up to
 
@@ -115,5 +119,5 @@ Additional functionalities:
 17. As an administrator, I want to ban other users for inappropriate behaviour or other, so the application stays clean.
 	- Read above
 
-#### Mockups which the UI was based on
+#### Mockups which the UI is based on
 https://imgur.com/a/josxyFK
