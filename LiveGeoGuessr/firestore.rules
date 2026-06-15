@@ -45,7 +45,8 @@ service cloud.firestore {
             "lastLoginAt",
             "updatedAt",
             "photoUrl",
-            "avatarPath"
+            "avatarPath",
+            "stats"
           ])
         && request.resource.data.updatedAt == request.time
         && (
@@ -76,9 +77,18 @@ service cloud.firestore {
         && request.resource.data.isActive == true
         && request.resource.data.createdAt == request.time
         && (
+          !("authorPhotoUrl" in request.resource.data) ||
+          request.resource.data.authorPhotoUrl == null ||
+          request.resource.data.authorPhotoUrl is string
+        )
+        && (
           !("gameMode" in request.resource.data) ||
           request.resource.data.gameMode == "CITY"
         );
+    }
+    function hasGuessedPost(postId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/guesses/$(request.auth.uid + "_" + postId));
     }
 
     match /users/{uid} {
@@ -108,32 +118,34 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      // Wymagane przez getPosts().
-      // Użytkownik może czytać własne posty oraz posty znajomych.
-      allow get, list: if signedIn()
+      // Pojedynczy post:
+      // - własny,
+      // - znajomego,
+      // - wcześniej zgadnięty.
+      allow get: if signedIn()
+        && (
+          hasGuessedPost(postId) ||
+          resource.data.userId == request.auth.uid ||
+          isFriend(resource.data.userId)
+        );
+
+      // Zapytania kolekcji:
+      // - własne posty,
+      // - posty znajomych.
+      allow list: if signedIn()
         && (
           resource.data.userId == request.auth.uid ||
           isFriend(resource.data.userId)
         );
 
-      // Wymagane przez addPost().
       allow create: if validPostCreate();
 
-      // Brak obsługi edycji/usuwania posta w podanym kodzie.
-      allow update, delete: if false;
+      allow update: if false;
+
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
     }
 
-    match /guesses/{guessId} {
-      // Potrzebne, bo getMyGuessForPost() sprawdza też dokument,
-      // który może jeszcze nie istnieć.
-      allow get: if signedIn()
-        && guessId.matches("^" + request.auth.uid + "_.*");
-
-      allow list: if false;
-
-      // Zgadywanie zapisuje tylko Cloud Function submitGuess.
-      allow create, update, delete: if false;
-    }
 
     match /friendRequests/{requestId} {
       // Wymagane przez getIncomingRequests() i getOutgoingRequests().
@@ -147,7 +159,21 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
-    match /{document=**} {
+    match /guesses/{guessId} {
+      // getMyGuessForPost() - sprawdza konkretny dokument uid_postId,
+      // nawet jeśli dokument jeszcze nie istnieje.
+      allow get: if signedIn()
+        && guessId.matches("^" + request.auth.uid + "_.*");
+
+      // getMyGuessedPosts() / getMyGuessedPostIds()
+      // pozwala pobrać tylko własne zgadnięcia.
+      allow list: if signedIn()
+        && resource.data.userUid == request.auth.uid;
+
+      // Zgadywanie zapisuje tylko Cloud Function submitGuess.
+      allow create, update, delete: if false;
+    }
+		match /{document=**} {
       allow read, write: if false;
     }
   }
