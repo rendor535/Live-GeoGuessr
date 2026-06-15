@@ -1,0 +1,11 @@
+* [32mdevelop[m
+  feature/avatar-photo-change[m
+  feature/firebase-backend[m
+  feature/friend-system[m
+  feature/guess-points[m
+  feature/guess-system[m
+  feature/photo-upload-to-backend[m
+  feature/user-login-model-and-backend[m
+  fix/guessed_posts_in_guesses_tab[m
+  fix/user_posts_in_post_tab[m
+  main[m
