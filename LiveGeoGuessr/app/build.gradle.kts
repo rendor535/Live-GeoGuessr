@@ -8,7 +8,15 @@ plugins {
     id("com.google.gms.google-services")
     id("jacoco")
 }
-
+val ciKeystorePath = System.getenv("CI_KEYSTORE_PATH")
+val ciKeystorePassword = System.getenv("CI_KEYSTORE_PASSWORD")
+val ciKeyAlias = System.getenv("CI_KEY_ALIAS")
+val ciKeyPassword = System.getenv("CI_KEY_PASSWORD")
+val hasCiSigningConfig =
+    !ciKeystorePath.isNullOrBlank() &&
+            !ciKeystorePassword.isNullOrBlank() &&
+            !ciKeyAlias.isNullOrBlank() &&
+            !ciKeyPassword.isNullOrBlank()
 android {
     namespace = "com.example.livegeoguessr"
     compileSdk {
@@ -27,13 +35,27 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    signingConfigs {
+        if (hasCiSigningConfig) {
+            create("ci") {
+                storeFile = file(ciKeystorePath!!)
+                storePassword = ciKeystorePassword
+                keyAlias = ciKeyAlias
+                keyPassword = ciKeyPassword
+            }
+        }
+    }
 
     buildTypes {
         debug {
             enableUnitTestCoverage = true
+            if (hasCiSigningConfig) {
+                signingConfig = signingConfigs.getByName("ci")
+            }
         }
         release {
             isMinifyEnabled = false
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -62,7 +84,6 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
-    implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.functions)
     //noinspection LoginCredentials
     implementation(libs.androidx.credentials)
