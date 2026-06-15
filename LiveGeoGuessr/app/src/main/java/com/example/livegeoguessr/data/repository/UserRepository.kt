@@ -106,7 +106,6 @@ class UserRepository @Inject constructor(){
             .update(
                 mapOf(
                     "nickname" to normalizedNickname,
-                    "displayName" to normalizedNickname,
                     "updatedAt" to FieldValue.serverTimestamp()
                 )
             )
