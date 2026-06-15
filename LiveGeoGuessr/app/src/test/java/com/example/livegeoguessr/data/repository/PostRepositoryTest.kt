@@ -755,8 +755,10 @@ class PostRepositoryTest {
             val guessesSnapshot = mockk<QuerySnapshot>()
 
             val postsCollection = mockk<CollectionReference>()
-            val postsQuery = mockk<Query>()
-            val postsSnapshot = mockk<QuerySnapshot>()
+
+            val post1Reference = mockk<DocumentReference>()
+            val missingPostReference = mockk<DocumentReference>()
+            val brokenPostReference = mockk<DocumentReference>()
 
             val usersCollection = mockk<CollectionReference>()
             val usersQuery = mockk<Query>()
@@ -783,6 +785,13 @@ class PostRepositoryTest {
                 createdAtSeconds = 200L
             )
 
+            val invalidPostGuess = guessDocument(
+                postId = "broken",
+                distanceMeters = 25.0,
+                points = 10L,
+                createdAtSeconds = 100L
+            )
+
             val duplicateGuess = guessDocument(
                 postId = "post1",
                 distanceMeters = 5.0,
@@ -798,6 +807,8 @@ class PostRepositoryTest {
                 latitude = 10.0,
                 longitude = 20.0
             )
+
+            val missingPost = mockk<DocumentSnapshot>()
 
             val invalidPost = postDocument(
                 id = "broken",
@@ -815,9 +826,17 @@ class PostRepositoryTest {
                 photoUrl = null
             )
 
-            every { firestore.collection("guesses") } returns guessesCollection
-            every { firestore.collection("posts") } returns postsCollection
-            every { firestore.collection("users") } returns usersCollection
+            every {
+                firestore.collection("guesses")
+            } returns guessesCollection
+
+            every {
+                firestore.collection("posts")
+            } returns postsCollection
+
+            every {
+                firestore.collection("users")
+            } returns usersCollection
 
             every {
                 guessesCollection.whereEqualTo("userUid", "user1")
@@ -833,23 +852,45 @@ class PostRepositoryTest {
                 missingPostIdGuess,
                 defaultValuesGuess,
                 missingPostGuess,
+                invalidPostGuess,
                 duplicateGuess
             )
 
             every {
-                postsCollection.whereIn(
-                    any<FieldPath>(),
-                    listOf("post1", "missing")
-                )
-            } returns postsQuery
+                postsCollection.document("post1")
+            } returns post1Reference
 
             every {
-                postsQuery.get()
-            } returns Tasks.forResult(postsSnapshot)
+                postsCollection.document("missing")
+            } returns missingPostReference
 
             every {
-                postsSnapshot.documents
-            } returns listOf(validPost, invalidPost)
+                postsCollection.document("broken")
+            } returns brokenPostReference
+
+            every {
+                post1Reference.get()
+            } returns Tasks.forResult(validPost)
+
+            every {
+                missingPostReference.get()
+            } returns Tasks.forResult(missingPost)
+
+            every {
+                brokenPostReference.get()
+            } returns Tasks.forResult(invalidPost)
+
+            every {
+                validPost.exists()
+            } returns true
+
+            every {
+                missingPost.exists()
+            } returns false
+
+            every {
+                invalidPost.exists()
+            } returns true
 
             every {
                 usersCollection.whereIn(
@@ -868,20 +909,28 @@ class PostRepositoryTest {
 
             val result = repository.getMyGuessedPosts()
 
-            // brak postId został pominięty
-            // brakujący post "missing" został pominięty
-            // dwa zgadnięcia post1 pozostają w wyniku
             assertEquals(2, result.size)
 
             assertEquals("post1", result[0].post.id)
             assertEquals("Friend display", result[0].post.user)
-
-            // brak distanceMeters i points -> wartości domyślne
             assertEquals(0.0, result[0].distanceMeters)
             assertEquals(0, result[0].points)
 
+            assertEquals("post1", result[1].post.id)
             assertEquals(5.0, result[1].distanceMeters)
             assertEquals(2, result[1].points)
+
+            verify(exactly = 1) {
+                postsCollection.document("post1")
+            }
+
+            verify(exactly = 1) {
+                postsCollection.document("missing")
+            }
+
+            verify(exactly = 1) {
+                postsCollection.document("broken")
+            }
         }
 
     @Test
