@@ -2,6 +2,7 @@ package com.example.livegeoguessr.ui.screens.guessedposts
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -27,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.livegeoguessr.ui.navigation.Screen
-import com.example.livegeoguessr.ui.screens.home.PostItem
+import com.example.livegeoguessr.ui.components.PostItem
 
 import androidx.compose.ui.res.stringResource
 import com.example.livegeoguessr.R
@@ -63,7 +64,7 @@ fun GuessedPostsScreen(
                         .padding(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    androidx.compose.foundation.layout.Column(
+                    Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(

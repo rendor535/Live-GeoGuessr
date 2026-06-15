@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,7 +18,8 @@ data class FriendUI(
     val displayName: String,
     val profileImageUrl: String?,
     val isOnline: Boolean,
-    val points: Int
+    val points: Int,
+    val isLoading: Boolean = false
 )
 
 data class FriendRequestUI(
@@ -25,7 +27,8 @@ data class FriendRequestUI(
     val userUid: String,
     val displayName: String,
     val nickname: String,
-    val profileImageUrl: String?
+    val profileImageUrl: String?,
+    val isProcessing: Boolean = false
 )
 
 data class FriendsUiState(
@@ -50,17 +53,17 @@ class FriendsViewModel @Inject constructor(
 
     fun loadFriendsData() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
+            _uiState.update { it.copy(
                 isLoading = true,
                 errorMessage = null
-            )
+            ) }
 
             try {
                 val friends = friendRepository.getFriends()
                 val incomingRequests = friendRepository.getIncomingRequests()
                 val outgoingRequests = friendRepository.getOutgoingRequests()
 
-                _uiState.value = _uiState.value.copy(
+                _uiState.update { it.copy(
                     friends = friends.map { user -> user.toFriendUI() },
                     incomingRequests = incomingRequests.map { request ->
                         request.toIncomingRequestUI()
@@ -69,51 +72,81 @@ class FriendsViewModel @Inject constructor(
                         request.toOutgoingRequestUI()
                     },
                     isLoading = false
-                )
+                ) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
+                _uiState.update { it.copy(
                     isLoading = false,
                     errorMessage = e.message ?: "Nie udało się pobrać znajomych"
-                )
+                ) }
             }
         }
     }
 
     fun acceptFriendRequest(requestId: String) {
         viewModelScope.launch {
+            _uiState.update { state ->
+                state.copy(incomingRequests = state.incomingRequests.map {
+                    if (it.id == requestId) it.copy(isProcessing = true) else it
+                })
+            }
             try {
                 friendRepository.acceptFriendRequest(requestId)
                 loadFriendsData()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    errorMessage = e.message ?: "Nie udało się zaakceptować zaproszenia"
-                )
+                _uiState.update { state ->
+                    state.copy(
+                        errorMessage = e.message ?: "Nie udało się zaakceptować zaproszenia",
+                        incomingRequests = state.incomingRequests.map {
+                            if (it.id == requestId) it.copy(isProcessing = false) else it
+                        }
+                    )
+                }
             }
         }
     }
 
     fun rejectFriendRequest(requestId: String) {
         viewModelScope.launch {
+            _uiState.update { state ->
+                state.copy(incomingRequests = state.incomingRequests.map {
+                    if (it.id == requestId) it.copy(isProcessing = true) else it
+                })
+            }
             try {
                 friendRepository.rejectFriendRequest(requestId)
                 loadFriendsData()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    errorMessage = e.message ?: "Nie udało się odrzucić zaproszenia"
-                )
+                _uiState.update { state ->
+                    state.copy(
+                        errorMessage = e.message ?: "Nie udało się odrzucić zaproszenia",
+                        incomingRequests = state.incomingRequests.map {
+                            if (it.id == requestId) it.copy(isProcessing = false) else it
+                        }
+                    )
+                }
             }
         }
     }
 
     fun removeFriend(friendUid: String) {
         viewModelScope.launch {
+            _uiState.update { state ->
+                state.copy(friends = state.friends.map {
+                    if (it.id == friendUid) it.copy(isLoading = true) else it
+                })
+            }
             try {
                 friendRepository.removeFriend(friendUid)
                 loadFriendsData()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    errorMessage = e.message ?: "Nie udało się usunąć znajomego"
-                )
+                _uiState.update { state ->
+                    state.copy(
+                        errorMessage = e.message ?: "Nie udało się usunąć znajomego",
+                        friends = state.friends.map {
+                            if (it.id == friendUid) it.copy(isLoading = false) else it
+                        }
+                    )
+                }
             }
         }
     }

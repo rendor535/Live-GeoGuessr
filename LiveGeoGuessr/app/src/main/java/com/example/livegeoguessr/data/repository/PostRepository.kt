@@ -18,6 +18,10 @@ import javax.inject.Singleton
 import com.example.livegeoguessr.domain.model.GuessedPost
 import com.google.firebase.firestore.FieldPath
 import com.example.livegeoguessr.domain.model.PublicUser
+import com.google.firebase.storage.StorageException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 @Singleton
 class PostRepository @Inject constructor(
     private val auth: FirebaseAuth,
@@ -29,18 +33,19 @@ class PostRepository @Inject constructor(
         return try {
             val friendUids = getFriendUids()
             val guessedPostIds = getMyGuessedPostIds()
-            android.util.Log.d("PostRepository", "Current user: ${auth.currentUser?.uid}")
-            android.util.Log.d("PostRepository", "Friend UIDs: $friendUids")
+
+            android.util.Log.d(TAG, "Current user: ${auth.currentUser?.uid}")
+            android.util.Log.d(TAG, "Friend UIDs: $friendUids")
 
             if (friendUids.isEmpty()) {
-                android.util.Log.d("PostRepository", "No friends found")
+                android.util.Log.d(TAG, "No friends found")
                 return emptyList()
             }
 
-            val postsFromFriends = mutableListOf<Post>()
+            val postDocuments = mutableListOf<DocumentSnapshot>()
 
             friendUids.chunked(30).forEach { uidChunk ->
-                android.util.Log.d("PostRepository", "Query posts where userId in: $uidChunk")
+                android.util.Log.d(TAG, "Query posts where userId in: $uidChunk")
 
                 val snapshot = firestore
                     .collection("posts")
@@ -48,34 +53,37 @@ class PostRepository @Inject constructor(
                     .get()
                     .await()
 
-                android.util.Log.d("PostRepository", "Posts found in chunk: ${snapshot.size()}")
+                android.util.Log.d(
+                    TAG,
+                    "Posts found in chunk: ${snapshot.size()}"
+                )
 
-                snapshot.documents.forEach { document ->
-                    android.util.Log.d(
-                        "PostRepository",
-                        "Post ${document.id}: userId=${document.getString("userId")}, user=${document.getString("user")}"
-                    )
+                postDocuments.addAll(snapshot.documents)
+            }
+
+            val posts = postDocuments
+                // Usunięcie postów już zgadniętych.
+                .filter { document ->
+                    document.id !in guessedPostIds
                 }
-
-                val posts = snapshot.documents.mapNotNull { document: DocumentSnapshot ->
+                // Najnowsze posty na początku.
+                .sortedByDescending { document ->
+                    document.getTimestamp("createdAt")?.toDate()?.time
+                        ?: Long.MIN_VALUE
+                }
+                // Zamiana dokumentów Firestore na model Post.
+                .mapNotNull { document ->
                     PostFactory.fromDocument(document)
                 }
 
-                postsFromFriends.addAll(posts)
-            }
+            android.util.Log.d(
+                TAG,
+                "Posts after filtering and sorting: ${posts.size}"
+            )
 
-            android.util.Log.d("PostRepository", "Total posts from friends: ${postsFromFriends.size}")
-            android.util.Log.d("PostRepository", "Guessed post IDs: $guessedPostIds")
-
-            val notGuessedPosts = postsFromFriends.filter { post ->
-                post.id !in guessedPostIds
-            }
-
-            android.util.Log.d("PostRepository", "Posts after filtering guessed: ${notGuessedPosts.size}")
-
-            attachAuthorProfiles(notGuessedPosts)
+            attachAuthorProfiles(posts)
         } catch (e: Exception) {
-            android.util.Log.e("PostRepository", "Error loading friend posts", e)
+            android.util.Log.e(TAG, "Error loading friend posts", e)
             throw e
         }
     }
@@ -194,30 +202,36 @@ class PostRepository @Inject constructor(
         }
     }
 
-    private suspend fun getPostsByIds(postIds: List<String>): Map<String, Post> {
+    private suspend fun getPostsByIds(
+        postIds: List<String>
+    ): Map<String, Post> = coroutineScope {
         if (postIds.isEmpty()) {
-            return emptyMap()
+            return@coroutineScope emptyMap()
         }
 
-        val posts = mutableMapOf<String, Post>()
+        val posts = postIds
+            .distinct()
+            .map { postId ->
+                async {
+                    val document = firestore
+                        .collection("posts")
+                        .document(postId)
+                        .get()
+                        .await()
 
-        postIds.distinct().chunked(30).forEach { chunk ->
-            val snapshot = firestore
-                .collection("posts")
-                .whereIn(FieldPath.documentId(), chunk)
-                .get()
-                .await()
-
-            snapshot.documents.forEach { document ->
-                PostFactory.fromDocument(document)?.let { post ->
-                    posts[post.id] = post
+                    if (document.exists()) {
+                        PostFactory.fromDocument(document)
+                    } else {
+                        null
+                    }
                 }
             }
-        }
+            .awaitAll()
+            .filterNotNull()
 
-        val enrichedPosts = attachAuthorProfiles(posts.values.toList())
+        val enrichedPosts = attachAuthorProfiles(posts)
 
-        return enrichedPosts.associateBy { post ->
+        enrichedPosts.associateBy { post ->
             post.id
         }
     }
@@ -315,6 +329,61 @@ class PostRepository @Inject constructor(
             authorPhotoUrl = userPhotoUrl
         )
     }
+
+    suspend fun deleteMyPost(postId: String) {
+        val currentUser = auth.currentUser
+            ?: throw IllegalStateException("User is not logged in")
+
+        val userId = currentUser.uid
+
+        val postReference = firestore
+            .collection("posts")
+            .document(postId)
+
+        val userReference = firestore
+            .collection("users")
+            .document(userId)
+
+        firestore.runTransaction { transaction ->
+            val postSnapshot = transaction.get(postReference)
+
+            if (!postSnapshot.exists()) {
+                throw IllegalStateException("Post does not exist")
+            }
+
+            val postOwnerUid = postSnapshot.getString("userId")
+
+            if (postOwnerUid != userId) {
+                throw SecurityException("You cannot delete another user's post")
+            }
+
+            transaction.delete(postReference)
+
+            transaction.update(
+                userReference,
+                mapOf(
+                    "stats.postsCount" to FieldValue.increment(-1L),
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+        }.await()
+
+        try {
+            storage.reference
+                .child("posts/$userId/$postId.jpg")
+                .delete()
+                .await()
+        } catch (e: StorageException) {
+            if (e.errorCode != StorageException.ERROR_OBJECT_NOT_FOUND) {
+                android.util.Log.e(
+                    TAG,
+                    "Post deleted, but image deletion failed",
+                    e
+                )
+            }
+        }
+    }
+
     private fun Bitmap.toJpegByteArray(): ByteArray {
         val outputStream = ByteArrayOutputStream()
         compress(Bitmap.CompressFormat.JPEG, 85, outputStream)

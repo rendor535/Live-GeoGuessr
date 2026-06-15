@@ -8,6 +8,7 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 import android.net.Uri
+import com.example.livegeoguessr.data.remote.firebase.FirebaseModule.firestore
 
 @Singleton
 class UserRepository @Inject constructor(){
@@ -54,7 +55,16 @@ class UserRepository @Inject constructor(){
             ).await()
         }
     }
-
+    suspend fun saveProfile(uid: String, nickname: String) {
+        users.document(uid)
+            .update(
+                mapOf(
+                    "nickname" to nickname,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+            .await()
+    }
     suspend fun getUserProfile(uid: String): UserProfile? {
         val snapshot = users.document(uid).get().await()
         return snapshot.toObject(UserProfile::class.java)
@@ -79,5 +89,26 @@ class UserRepository @Inject constructor(){
             .await()
 
         return downloadUrl
+    }
+    suspend fun updateNickname(
+        uid: String,
+        newNickname: String
+    ) {
+        val normalizedNickname = newNickname.trim()
+
+        require(normalizedNickname.isNotBlank()) {
+            "Nickname cannot be blank"
+        }
+
+        firestore
+            .collection("users")
+            .document(uid)
+            .update(
+                mapOf(
+                    "nickname" to normalizedNickname,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+            .await()
     }
 }

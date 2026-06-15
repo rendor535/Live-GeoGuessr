@@ -13,12 +13,12 @@
     <string name="location_permission_rationale">We need your location to tag your photos accurately and show you where others have been. Help us map the world!</string>
     <string name="grant_permission">Grant Access</string>
     <string name="your_location">Your Location</string>
-    <string name="login">Login</string>
+    <string name="login">Log in</string>
     <string name="register">Register</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
     <string name="dont_have_account">Don\'t have an account? Register</string>
-    <string name="already_have_account">Already have an account? Login</string>
+    <string name="already_have_account">Already have an account? Log in</string>
     <string name="no_posts">No posts yet</string>
     <string name="no_guessed_posts">No guessed posts yet</string>
     <string name="no_guessed_posts_description">Guessed posts will appear here after you submit an answer.</string>
@@ -35,11 +35,11 @@
     <string name="dark_mode">Dark Mode</string>
     <string name="use_miles">Use Miles</string>
     <string name="distance_result_miles">Distance: %1$.2f mi</string>
-    <string name="login_with_google">Login with Google</string>
+    <string name="login_with_google">Log in with Google</string>
     <string name="profile_settings">Profile Settings</string>
     <string name="change_profile_picture">Change Profile Picture</string>
     <string name="change_name">Change Name</string>
-    <string name="logout">Logout</string>
+    <string name="logout">Log out</string>
     <string name="delete_account">Delete Account</string>
     <string name="save">Save</string>
     <string name="display_name">Display Name</string>
@@ -47,7 +47,7 @@
     <string name="gallery">Gallery</string>
     <string name="camera">Camera</string>
     <string name="authentication_failed">Authentication failed</string>
-    <string name="google_login_failed">Google login failed</string>
+    <string name="google_login_failed">Google log in failed</string>
     <string name="user_not_found">User not found</string>
     <string name="fetch_users_failed">Failed to fetch users</string>
     <string name="fetch_posts_failed">Failed to fetch posts</string>
@@ -86,4 +86,25 @@
     <string name="must_be_logged_in">You must be logged in.</string>
     <string name="post_not_found">Post not found.</string>
     <string name="submit_guess_failed">Failed to submit guess.</string>
+    <string name="post_by">Post by %1$s</string>
+    <string name="friend_request_from">Friend request from</string>
+    <string name="friend">Friend</string>
+    <string name="friend_request_to">Friend request to</string>
+    <string name="go_back">Go back</string>
+    <string name="refresh">Refresh</string>
+    <string name="close">Close</string>
+    <string name="user">User</string>
+    <string name="profile_picture">Profile picture</string>
+    <string name="delete_account_confirmation_question">
+        Are you sure you want to delete your account?
+    </string>
+    <string name="delete_account_warning">
+        This action is permanent. Your profile, posts, guesses and friends data will be deleted.
+    </string>
+    <string name="type_delete_to_confirm">
+        Type DELETE to confirm
+    </string>
+    <string name="confirm_delete_account">
+        Delete account
+    </string>
 </resources>

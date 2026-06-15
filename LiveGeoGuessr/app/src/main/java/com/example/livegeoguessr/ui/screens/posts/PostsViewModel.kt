@@ -8,13 +8,16 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class PostsUiState(
     val isLoading: Boolean = false,
     val posts: List<Post> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isDeleting: Boolean = false,
+    val deleteErrorMessage: String? = null
 )
 
 @HiltViewModel
@@ -33,23 +36,73 @@ class PostsViewModel @Inject constructor(
 
     private fun loadMyPosts() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null
-            )
+            _uiState.update {
+                it.copy(isLoading = true, errorMessage = null)
+            }
 
             try {
                 val posts = postRepository.getMyPosts()
 
-                _uiState.value = PostsUiState(
-                    isLoading = false,
-                    posts = posts
-                )
+                _uiState.update{
+                    it.copy(
+                        isLoading = false,
+                        posts = posts
+                    )
+                }
             } catch (e: Exception) {
-                _uiState.value = PostsUiState(
-                    isLoading = false,
-                    errorMessage = e.message ?: "Failed to fetch posts"
+                _uiState.update{
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Failed to fetch posts"
+                    )
+                }
+            }
+        }
+    }
+
+    fun deletePost(
+        postId: String,
+        onDeleted: () -> Unit
+    ) {
+        if (_uiState.value.isDeleting) {
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isDeleting = true,
+                    deleteErrorMessage = null
                 )
+            }
+
+            try {
+                postRepository.deleteMyPost(postId)
+
+                _uiState.update { state ->
+                    state.copy(
+                        isDeleting = false,
+                        posts = state.posts.filterNot { post ->
+                            post.id == postId
+                        }
+                    )
+                }
+
+                onDeleted()
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    "PostsViewModel",
+                    "Failed to delete post: $postId",
+                    e
+                )
+
+                _uiState.update {
+                    it.copy(
+                        isDeleting = false,
+                        deleteErrorMessage = e.message
+                            ?: "Failed to delete post"
+                    )
+                }
             }
         }
     }

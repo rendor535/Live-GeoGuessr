@@ -5,9 +5,10 @@ import com.example.livegeoguessr.domain.model.GameModeType
 import com.example.livegeoguessr.domain.model.SubmitGuessResult
 import com.example.livegeoguessr.domain.model.GuessMapPreview
 import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
 
-class GuessRepository {
-
+class GuessRepository @Inject constructor(
+) {
     private val functions = FirebaseModule.functions
     private val firestore = FirebaseModule.firestore
     private val auth = FirebaseModule.auth

@@ -19,6 +19,9 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.livegeoguessr.ui.screens.posts.MyPostLocationScreen
 import com.example.livegeoguessr.ui.screens.guessedposts.GuessedPostsScreen
+import androidx.compose.runtime.remember
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.livegeoguessr.ui.screens.posts.PostsViewModel
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
@@ -60,8 +63,15 @@ fun AppNavGraph(
                 }
             )
         }
-        composable(Screen.Posts.route) {
-            PostsScreen(navController)
+        composable(Screen.Posts.route) { backStackEntry ->
+            val postsViewModel: PostsViewModel = hiltViewModel(
+                viewModelStoreOwner = backStackEntry
+            )
+
+            PostsScreen(
+                navController = navController,
+                viewModel = postsViewModel
+            )
         }
         composable(Screen.Guess.route) { backStackEntry ->
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
@@ -75,29 +85,60 @@ fun AppNavGraph(
         composable(
             route = Screen.MyPostLocation.route,
             arguments = listOf(
-                navArgument("imageUrl") { type = NavType.StringType },
-                navArgument("lat") { type = NavType.StringType },
-                navArgument("lon") { type = NavType.StringType }
+                navArgument("postId") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+                navArgument("imageUrl") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+                navArgument("lat") {
+                    type = NavType.StringType
+                    defaultValue = "0.0"
+                },
+                navArgument("lon") {
+                    type = NavType.StringType
+                    defaultValue = "0.0"
+                }
             )
         ) { backStackEntry ->
-            val imageUrl = Uri.decode(
-                backStackEntry.arguments?.getString("imageUrl") ?: ""
-            )
 
-            val lat = backStackEntry.arguments
+            val postId = backStackEntry.arguments
+                ?.getString("postId")
+                .orEmpty()
+
+            val imageUrl = backStackEntry.arguments
+                ?.getString("imageUrl")
+                .orEmpty()
+
+            val latitude = backStackEntry.arguments
                 ?.getString("lat")
                 ?.toDoubleOrNull()
                 ?: 0.0
 
-            val lon = backStackEntry.arguments
+            val longitude = backStackEntry.arguments
                 ?.getString("lon")
                 ?.toDoubleOrNull()
                 ?: 0.0
 
+            val postsBackStackEntry = remember(backStackEntry) {
+                navController.getBackStackEntry(Screen.Posts.route)
+            }
+
+            val postsViewModel: PostsViewModel = hiltViewModel(
+                viewModelStoreOwner = postsBackStackEntry
+            )
+
             MyPostLocationScreen(
+                postId = postId,
                 imageUrl = imageUrl,
-                latitude = lat,
-                longitude = lon
+                latitude = latitude,
+                longitude = longitude,
+                viewModel = postsViewModel,
+                onPostDeleted = {
+                    navController.popBackStack()
+                }
             )
         }
     }

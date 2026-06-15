@@ -49,7 +49,7 @@ class GuessedPostsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Nie udało się pobrać zgadniętych postów"
+                        error = e.message ?: "Couldn't load guessed posts"
                     )
                 }
             }

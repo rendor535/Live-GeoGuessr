@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.livegeoguessr.ui.screens.home.PostItem
+import com.example.livegeoguessr.ui.components.PostItem
 import com.example.livegeoguessr.ui.navigation.Screen
 import androidx.compose.ui.res.stringResource
 import com.example.livegeoguessr.R
@@ -59,17 +59,21 @@ fun PostsScreen(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(uiState.posts) { post ->
+                items(
+                    items = uiState.posts,
+                    key = { post -> post.id }
+                ) { post ->
                     PostItem(
                         post = post,
                         onClick = {
-                            navController.navigate(
-                                Screen.MyPostLocation.createRoute(
-                                    imageUrl = post.imageUrl,
-                                    lat = post.latitude,
-                                    lon = post.longitude
-                                )
+                            val route = Screen.MyPostLocation.createRoute(
+                                postId = post.id,
+                                imageUrl = post.imageUrl,
+                                lat = post.latitude,
+                                lon = post.longitude
                             )
+
+                            navController.navigate(route)
                         }
                     )
                 }

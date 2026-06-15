@@ -32,11 +32,9 @@ data class GuessUiState(
 
 @HiltViewModel
 class GuessViewModel @Inject constructor(
-    repository: SettingsRepository
+    repository: SettingsRepository,
+    private val guessRepository: GuessRepository
 ) : ViewModel() {
-
-    private val guessRepository = GuessRepository()
-
     val useMiles = repository.useMilesFlow
         .stateIn(
             scope = viewModelScope,

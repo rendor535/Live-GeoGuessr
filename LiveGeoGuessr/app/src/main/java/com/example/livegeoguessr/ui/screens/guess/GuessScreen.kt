@@ -44,7 +44,7 @@ fun GuessScreen(
     imageUrl: String,
     viewModel: GuessViewModel = hiltViewModel()
 ) {
-    var isImageFullScreen by remember { mutableStateOf(false) }
+    var isImageFullScreen by remember { mutableStateOf(true) }
 
     val useMiles by viewModel.useMiles.collectAsState()
     val guessUiState by viewModel.guessUiState.collectAsState()
@@ -252,6 +252,7 @@ fun MapViewContainer(
     } }
 
     val updatedOnLocationSelected by rememberUpdatedState(onLocationSelected)
+    val updatedIsInteractable by rememberUpdatedState(isInteractable)
 
     var hasSetInitialCamera by remember(initialCenter, initialMapDiameterMeters) { mutableStateOf(false) }
     var hasZoomedToResult by remember(guessedLocation, targetLocation, showResult) { mutableStateOf(false) }
@@ -285,7 +286,7 @@ fun MapViewContainer(
 
                     val eventsOverlay = MapEventsOverlay(object : MapEventsReceiver {
                         override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
-                            if (isInteractable) {
+                            if (updatedIsInteractable) {
                                 updatedOnLocationSelected?.invoke(p)
                             }
                             return true
