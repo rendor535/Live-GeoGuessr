@@ -89,4 +89,26 @@ class UserRepository @Inject constructor(){
 
         return downloadUrl
     }
+    suspend fun updateNickname(
+        uid: String,
+        newNickname: String
+    ) {
+        val normalizedNickname = newNickname.trim()
+
+        require(normalizedNickname.isNotBlank()) {
+            "Nickname cannot be blank"
+        }
+
+        firestore
+            .collection("users")
+            .document(uid)
+            .update(
+                mapOf(
+                    "nickname" to normalizedNickname,
+                    "displayName" to normalizedNickname,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+            .await()
+    }
 }
