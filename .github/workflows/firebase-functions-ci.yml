@@ -1,4 +1,3 @@
-```yaml
 name: Firebase Functions CI
 
 on:
@@ -83,4 +82,3 @@ jobs:
           --project demo-live-geoguessr
           --only auth,firestore,functions,storage
           "npm --prefix functions run test:integration"
-```
