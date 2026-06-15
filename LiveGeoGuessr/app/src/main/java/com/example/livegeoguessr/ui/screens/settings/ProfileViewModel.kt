@@ -106,9 +106,50 @@ class ProfileViewModel @Inject constructor(
 
     fun saveProfile() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorResId = null) }
-            // TODO: Implement actual update in UserRepository
-            _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            val newNickname = _uiState.value.displayName.trim()
+
+            if (newNickname.isBlank()) {
+                return@launch
+            }
+
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    errorResId = null,
+                    isSuccess = false
+                )
+            }
+
+            val uid = authRepository.currentUid()
+
+            if (uid == null) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorResId = R.string.user_not_found
+                    )
+                }
+                return@launch
+            }
+
+            try {
+                userRepository.updateNickname(uid, newNickname)
+
+                _uiState.update {
+                    it.copy(
+                        displayName = newNickname,
+                        isLoading = false,
+                        isSuccess = true
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorResId = R.string.user_not_found
+                    )
+                }
+            }
         }
     }
 

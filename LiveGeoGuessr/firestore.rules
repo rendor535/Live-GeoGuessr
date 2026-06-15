@@ -46,7 +46,8 @@ service cloud.firestore {
             "updatedAt",
             "photoUrl",
             "avatarPath",
-            "stats"
+            "stats",
+            "nickname"
           ])
         && request.resource.data.updatedAt == request.time
         && (
@@ -60,6 +61,14 @@ service cloud.firestore {
         && (
           !request.resource.data.diff(resource.data).changedKeys().hasAny(["avatarPath"]) ||
           request.resource.data.avatarPath.matches("^avatars/" + request.auth.uid + "/profile_[0-9]+\\.jpg$")
+        )
+        && (
+          !request.resource.data.diff(resource.data).changedKeys().hasAny(["nickname"]) ||
+          (
+            request.resource.data.nickname is string
+            && request.resource.data.nickname.size() >= 1
+            && request.resource.data.nickname.size() <= 30
+          )
         );
     }
 

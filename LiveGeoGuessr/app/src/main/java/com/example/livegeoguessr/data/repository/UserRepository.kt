@@ -54,7 +54,16 @@ class UserRepository @Inject constructor(){
             ).await()
         }
     }
-
+    suspend fun saveProfile(uid: String, nickname: String) {
+        users.document(uid)
+            .update(
+                mapOf(
+                    "nickname" to nickname,
+                    "updatedAt" to FieldValue.serverTimestamp()
+                )
+            )
+            .await()
+    }
     suspend fun getUserProfile(uid: String): UserProfile? {
         val snapshot = users.document(uid).get().await()
         return snapshot.toObject(UserProfile::class.java)
