@@ -8,6 +8,7 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 import android.net.Uri
+import com.example.livegeoguessr.data.remote.firebase.FirebaseModule.firestore
 
 @Singleton
 class UserRepository @Inject constructor(){
