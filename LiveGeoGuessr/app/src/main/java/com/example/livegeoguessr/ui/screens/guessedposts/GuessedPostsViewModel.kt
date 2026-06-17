@@ -4,27 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.livegeoguessr.data.repository.PostRepository
 import com.example.livegeoguessr.domain.model.GuessedPost
+import com.example.livegeoguessr.ui.state.ScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-data class GuessedPostsUiState(
-    val guessedPosts: List<GuessedPost> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
 
 @HiltViewModel
 class GuessedPostsViewModel @Inject constructor(
     private val postRepository: PostRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(GuessedPostsUiState())
-    val uiState: StateFlow<GuessedPostsUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<ScreenState<List<GuessedPost>>>(ScreenState.Loading)
+    val uiState: StateFlow<ScreenState<List<GuessedPost>>> = _uiState.asStateFlow()
 
     init {
         loadGuessedPosts()
@@ -32,26 +26,22 @@ class GuessedPostsViewModel @Inject constructor(
 
     fun loadGuessedPosts() {
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(isLoading = true, error = null)
+            if (_uiState.value !is ScreenState.Content) {
+                _uiState.value = ScreenState.Loading
             }
 
             try {
                 val posts = postRepository.getMyGuessedPosts()
 
-                _uiState.update {
-                    it.copy(
-                        guessedPosts = posts,
-                        isLoading = false
-                    )
+                _uiState.value = if (posts.isEmpty()) {
+                    ScreenState.Empty()
+                } else {
+                    ScreenState.Content(posts)
                 }
             } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e.message ?: "Couldn't load guessed posts"
-                    )
-                }
+                _uiState.value = ScreenState.Error(
+                    message = e.message ?: "Couldn't load guessed posts"
+                )
             }
         }
     }

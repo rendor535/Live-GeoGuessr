@@ -26,6 +26,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.collectAsState
 import coil.compose.AsyncImage
 import com.example.livegeoguessr.ui.screens.guess.MapViewContainer
+import com.example.livegeoguessr.ui.state.ScreenState
 import org.osmdroid.util.GeoPoint
 
 import androidx.compose.ui.res.stringResource
@@ -46,6 +47,8 @@ fun MyPostLocationScreen(
         GeoPoint(latitude, longitude)
     }
     val uiState by viewModel.uiState.collectAsState()
+    val isDeleting = (uiState as? ScreenState.Content)?.data?.isDeleting ?: false
+    val deleteErrorMessage = (uiState as? ScreenState.Content)?.data?.deleteErrorMessage
 
     var showDeleteDialog by remember {
         mutableStateOf(false)
@@ -113,7 +116,7 @@ fun MyPostLocationScreen(
                 onClick = {
                     showDeleteDialog = true
                 },
-                enabled = !uiState.isDeleting,
+                enabled = !isDeleting,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(
@@ -133,7 +136,7 @@ fun MyPostLocationScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = {
-                if (!uiState.isDeleting) {
+                if (!isDeleting) {
                     showDeleteDialog = false
                 }
             },
@@ -142,7 +145,7 @@ fun MyPostLocationScreen(
             },
             text = {
                 Text(
-                    uiState.deleteErrorMessage
+                    deleteErrorMessage
                         ?: "This action cannot be undone."
                 )
             },
@@ -154,9 +157,9 @@ fun MyPostLocationScreen(
                             onPostDeleted()
                         }
                     },
-                    enabled = !uiState.isDeleting
+                    enabled = !isDeleting
                 ) {
-                    if (uiState.isDeleting) {
+                    if (isDeleting) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp
@@ -171,7 +174,7 @@ fun MyPostLocationScreen(
                     onClick = {
                         showDeleteDialog = false
                     },
-                    enabled = !uiState.isDeleting
+                    enabled = !isDeleting
                 ) {
                     Text("CANCEL")
                 }

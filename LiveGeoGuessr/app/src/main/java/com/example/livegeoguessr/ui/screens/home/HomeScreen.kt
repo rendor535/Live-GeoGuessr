@@ -37,6 +37,7 @@ import androidx.navigation.NavController
 import com.example.livegeoguessr.R
 import com.example.livegeoguessr.ui.navigation.Screen
 import com.example.livegeoguessr.ui.components.PostItem
+import com.example.livegeoguessr.ui.state.ScreenState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,12 +48,12 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     PullToRefreshBox(
-        isRefreshing = uiState.isLoading,
+        isRefreshing = uiState is ScreenState.Loading,
         onRefresh = { viewModel.loadPosts() },
         modifier = Modifier.fillMaxSize()
     ) {
-        when {
-            uiState.isLoading && uiState.posts.isEmpty() -> {
+        when (val state = uiState) {
+            is ScreenState.Loading -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -61,7 +62,13 @@ fun HomeScreen(
                 }
             }
 
-            uiState.posts.isEmpty() -> {
+            is ScreenState.Empty, is ScreenState.Error -> {
+                val title = if (state is ScreenState.Error) {
+                    state.message ?: stringResource(R.string.unknown_error)
+                } else {
+                    stringResource(R.string.no_posts)
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -91,7 +98,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Text(
-                            text = stringResource(R.string.no_posts),
+                            text = title,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
@@ -119,13 +126,13 @@ fun HomeScreen(
                 }
             }
 
-            else -> {
+            is ScreenState.Content -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(uiState.posts) { post ->
+                    items(state.data) { post ->
                         PostItem(
                             post = post,
                             onClick = {
