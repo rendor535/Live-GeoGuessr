@@ -2,6 +2,7 @@ package com.example.livegeoguessr.ui.screens.posts
 
 import com.example.livegeoguessr.data.repository.PostRepository
 import com.example.livegeoguessr.domain.model.Post
+import com.example.livegeoguessr.ui.state.ScreenState
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -44,9 +45,8 @@ class PostsViewModelTest {
 
         val state = viewModel.uiState.value
 
-        assertFalse(state.isLoading)
-        assertEquals(2, state.posts.size)
-        assertNull(state.errorMessage)
+        assertTrue(state is ScreenState.Content)
+        assertEquals(2, (state as ScreenState.Content).data.posts.size)
     }
 
     @Test
@@ -59,9 +59,8 @@ class PostsViewModelTest {
 
         val state = viewModel.uiState.value
 
-        assertFalse(state.isLoading)
-        assertEquals("network error", state.errorMessage)
-        assertTrue(state.posts.isEmpty())
+        assertTrue(state is ScreenState.Error)
+        assertEquals("network error", (state as ScreenState.Error).message)
     }
 
     @Test
@@ -78,11 +77,11 @@ class PostsViewModelTest {
         // allow coroutine to start
         testDispatcher.scheduler.advanceTimeBy(10)
 
-        assertTrue(viewModel.uiState.value.isLoading)
+        assertTrue(viewModel.uiState.value is ScreenState.Loading)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
         val finalState = viewModel.uiState.value
-        assertFalse(finalState.isLoading)
+        assertFalse(finalState is ScreenState.Loading)
     }
 }

@@ -2,6 +2,7 @@ package com.example.livegeoguessr.ui.screens.guessedposts
 
 import com.example.livegeoguessr.data.repository.PostRepository
 import com.example.livegeoguessr.domain.model.GuessedPost
+import com.example.livegeoguessr.ui.state.ScreenState
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,9 +56,8 @@ class GuessedPostsViewModelTest {
 
         val state = viewModel.uiState.value
 
-        assertFalse(state.isLoading)
-        assertEquals(posts, state.guessedPosts)
-        assertNull(state.error)
+        assertTrue(state is ScreenState.Content)
+        assertEquals(posts, (state as ScreenState.Content).data)
     }
 
     @Test
@@ -76,9 +76,8 @@ class GuessedPostsViewModelTest {
 
         val state = viewModel.uiState.value
 
-        assertFalse(state.isLoading)
-        assertEquals(posts, state.guessedPosts)
-        assertNull(state.error)
+        assertTrue(state is ScreenState.Content)
+        assertEquals(posts, (state as ScreenState.Content).data)
     }
 
     @Test
@@ -96,8 +95,8 @@ class GuessedPostsViewModelTest {
 
         val state = viewModel.uiState.value
 
-        assertFalse(state.isLoading)
-        assertEquals("network error", state.error)
+        assertTrue(state is ScreenState.Error)
+        assertEquals("network error", (state as ScreenState.Error).message)
     }
 
     @Test
@@ -113,11 +112,12 @@ class GuessedPostsViewModelTest {
             emptyList()
         }
 
+        viewModel = createViewModel()
         viewModel.loadGuessedPosts()
 
         runCurrent()
 
-        assertTrue(viewModel.uiState.value.isLoading)
+        assertTrue(viewModel.uiState.value is ScreenState.Loading)
         advanceUntilIdle()
     }
 }

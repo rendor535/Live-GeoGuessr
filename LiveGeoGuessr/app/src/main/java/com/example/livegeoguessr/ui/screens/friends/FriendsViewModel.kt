@@ -5,11 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.livegeoguessr.data.repository.FriendRepository
 import com.example.livegeoguessr.data.repository.FriendRequestData
 import com.example.livegeoguessr.domain.model.UserProfile
+import com.example.livegeoguessr.ui.state.ScreenState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -31,12 +31,10 @@ data class FriendRequestUI(
     val isProcessing: Boolean = false
 )
 
-data class FriendsUiState(
+data class FriendsData(
     val friends: List<FriendUI> = emptyList(),
     val incomingRequests: List<FriendRequestUI> = emptyList(),
-    val outgoingRequests: List<FriendRequestUI> = emptyList(),
-    val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val outgoingRequests: List<FriendRequestUI> = emptyList()
 )
 
 @HiltViewModel
@@ -44,8 +42,8 @@ class FriendsViewModel @Inject constructor(
     private val friendRepository: FriendRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(FriendsUiState())
-    val uiState: StateFlow<FriendsUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow<ScreenState<FriendsData>>(ScreenState.Loading)
+    val uiState: StateFlow<ScreenState<FriendsData>> = _uiState.asStateFlow()
 
     init {
         loadFriendsData()
@@ -53,100 +51,110 @@ class FriendsViewModel @Inject constructor(
 
     fun loadFriendsData() {
         viewModelScope.launch {
-            _uiState.update { it.copy(
-                isLoading = true,
-                errorMessage = null
-            ) }
+            if (_uiState.value !is ScreenState.Content) {
+                _uiState.value = ScreenState.Loading
+            }
 
             try {
                 val friends = friendRepository.getFriends()
                 val incomingRequests = friendRepository.getIncomingRequests()
                 val outgoingRequests = friendRepository.getOutgoingRequests()
 
-                _uiState.update { it.copy(
-                    friends = friends.map { user -> user.toFriendUI() },
-                    incomingRequests = incomingRequests.map { request ->
-                        request.toIncomingRequestUI()
-                    },
-                    outgoingRequests = outgoingRequests.map { request ->
-                        request.toOutgoingRequestUI()
-                    },
-                    isLoading = false
-                ) }
+                val data = FriendsData(
+                    friends = friends.map { it.toFriendUI() },
+                    incomingRequests = incomingRequests.map { it.toIncomingRequestUI() },
+                    outgoingRequests = outgoingRequests.map { it.toOutgoingRequestUI() }
+                )
+
+                _uiState.value = if (data.friends.isEmpty() && 
+                    data.incomingRequests.isEmpty() && 
+                    data.outgoingRequests.isEmpty()) {
+                    ScreenState.Empty()
+                } else {
+                    ScreenState.Content(data)
+                }
             } catch (e: Exception) {
-                _uiState.update { it.copy(
-                    isLoading = false,
-                    errorMessage = e.message ?: "Nie udało się pobrać znajomych"
-                ) }
+                _uiState.value = ScreenState.Error(
+                    message = e.message ?: "Failed to load friends data"
+                )
             }
         }
     }
 
     fun acceptFriendRequest(requestId: String) {
+        val currentState = _uiState.value
+        val currentData = when (currentState) {
+            is ScreenState.Content -> currentState.data
+            is ScreenState.Empty -> FriendsData()
+            else -> return
+        }
+
         viewModelScope.launch {
-            _uiState.update { state ->
-                state.copy(incomingRequests = state.incomingRequests.map {
-                    if (it.id == requestId) it.copy(isProcessing = true) else it
-                })
-            }
+            _uiState.value = ScreenState.Content(
+                currentData.copy(
+                    incomingRequests = currentData.incomingRequests.map {
+                        if (it.id == requestId) it.copy(isProcessing = true) else it
+                    }
+                )
+            )
             try {
                 friendRepository.acceptFriendRequest(requestId)
                 loadFriendsData()
             } catch (e: Exception) {
-                _uiState.update { state ->
-                    state.copy(
-                        errorMessage = e.message ?: "Nie udało się zaakceptować zaproszenia",
-                        incomingRequests = state.incomingRequests.map {
-                            if (it.id == requestId) it.copy(isProcessing = false) else it
-                        }
-                    )
-                }
+                android.util.Log.e("FriendsViewModel", "Failed to accept friend request", e)
+                _uiState.value = ScreenState.Error(message = e.message ?: "Failed to accept request")
             }
         }
     }
 
     fun rejectFriendRequest(requestId: String) {
+        val currentState = _uiState.value
+        val currentData = when (currentState) {
+            is ScreenState.Content -> currentState.data
+            is ScreenState.Empty -> FriendsData()
+            else -> return
+        }
+
         viewModelScope.launch {
-            _uiState.update { state ->
-                state.copy(incomingRequests = state.incomingRequests.map {
-                    if (it.id == requestId) it.copy(isProcessing = true) else it
-                })
-            }
+            _uiState.value = ScreenState.Content(
+                currentData.copy(
+                    incomingRequests = currentData.incomingRequests.map {
+                        if (it.id == requestId) it.copy(isProcessing = true) else it
+                    }
+                )
+            )
             try {
                 friendRepository.rejectFriendRequest(requestId)
                 loadFriendsData()
             } catch (e: Exception) {
-                _uiState.update { state ->
-                    state.copy(
-                        errorMessage = e.message ?: "Nie udało się odrzucić zaproszenia",
-                        incomingRequests = state.incomingRequests.map {
-                            if (it.id == requestId) it.copy(isProcessing = false) else it
-                        }
-                    )
-                }
+                android.util.Log.e("FriendsViewModel", "Failed to reject friend request", e)
+                _uiState.value = ScreenState.Error(message = e.message ?: "Failed to reject request")
             }
         }
     }
 
     fun removeFriend(friendUid: String) {
+        val currentState = _uiState.value
+        val currentData = when (currentState) {
+            is ScreenState.Content -> currentState.data
+            is ScreenState.Empty -> FriendsData()
+            else -> return
+        }
+
         viewModelScope.launch {
-            _uiState.update { state ->
-                state.copy(friends = state.friends.map {
-                    if (it.id == friendUid) it.copy(isLoading = true) else it
-                })
-            }
+            _uiState.value = ScreenState.Content(
+                currentData.copy(
+                    friends = currentData.friends.map {
+                        if (it.id == friendUid) it.copy(isLoading = true) else it
+                    }
+                )
+            )
             try {
                 friendRepository.removeFriend(friendUid)
                 loadFriendsData()
             } catch (e: Exception) {
-                _uiState.update { state ->
-                    state.copy(
-                        errorMessage = e.message ?: "Nie udało się usunąć znajomego",
-                        friends = state.friends.map {
-                            if (it.id == friendUid) it.copy(isLoading = false) else it
-                        }
-                    )
-                }
+                android.util.Log.e("FriendsViewModel", "Failed to remove friend", e)
+                _uiState.value = ScreenState.Error(message = e.message ?: "Failed to remove friend")
             }
         }
     }

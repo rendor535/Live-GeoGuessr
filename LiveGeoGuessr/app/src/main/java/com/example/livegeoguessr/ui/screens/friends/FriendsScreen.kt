@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,11 +46,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.livegeoguessr.R
 import com.example.livegeoguessr.ui.components.ProfileImage
+import com.example.livegeoguessr.ui.state.ScreenState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,11 +73,6 @@ fun FriendsScreen(
                         ))
                     }
                 },
-                actions = {
-                    IconButton(onClick = { viewModel.loadFriendsData() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
@@ -84,85 +82,125 @@ fun FriendsScreen(
         },
         containerColor = Color.Transparent
     ) { paddingValues ->
-        LazyColumn(
+        PullToRefreshBox(
+            isRefreshing = uiState is ScreenState.Loading,
+            onRefresh = { viewModel.loadFriendsData() },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(paddingValues)
         ) {
-            if (uiState.errorMessage != null) {
-                item {
-                    Text(
-                        text = uiState.errorMessage ?: "",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-
-            if (uiState.isLoading) {
-                item {
+            when (val state = uiState) {
+                is ScreenState.Loading -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator()
                     }
                 }
-            }
 
-            if (uiState.incomingRequests.isNotEmpty()) {
-                item {
-                    SectionTitle(stringResource(R.string.friend_requests))
-                }
-
-                items(uiState.incomingRequests) { request ->
-                    IncomingRequestItem(
-                        request = request,
-                        onAcceptClick = {
-                            viewModel.acceptFriendRequest(request.id)
-                        },
-                        onRejectClick = {
-                            viewModel.rejectFriendRequest(request.id)
-                        }
-                    )
-                }
-            }
-
-            if (uiState.outgoingRequests.isNotEmpty()) {
-                item {
-                    SectionTitle(stringResource(R.string.sent_requests))
-                }
-
-                items(uiState.outgoingRequests) { request ->
-                    OutgoingRequestItem(request)
-                }
-            }
-
-            item {
-                SectionTitle(stringResource(R.string.my_friends))
-            }
-
-            if (uiState.friends.isEmpty() && !uiState.isLoading) {
-                item {
-                    Text(
-                        text = stringResource(R.string.no_friends_yet),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            items(uiState.friends) { friend ->
-                FriendItem(
-                    friend = friend,
-                    onRemoveClick = {
-                        viewModel.removeFriend(friend.id)
+                is ScreenState.Empty, is ScreenState.Error -> {
+                    val title = if (state is ScreenState.Error) {
+                        state.message ?: stringResource(R.string.unknown_error)
+                    } else {
+                        stringResource(R.string.no_friends_yet)
                     }
-                )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(120.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Explore,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .padding(24.dp)
+                                        .fillMaxSize(),
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = stringResource(R.string.pull_to_refresh_no_posts),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                is ScreenState.Content -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        if (state.data.incomingRequests.isNotEmpty()) {
+                            item {
+                                SectionTitle(stringResource(R.string.friend_requests))
+                            }
+
+                            items(state.data.incomingRequests) { request ->
+                                IncomingRequestItem(
+                                    request = request,
+                                    onAcceptClick = {
+                                        viewModel.acceptFriendRequest(request.id)
+                                    },
+                                    onRejectClick = {
+                                        viewModel.rejectFriendRequest(request.id)
+                                    }
+                                )
+                            }
+                        }
+
+                        if (state.data.outgoingRequests.isNotEmpty()) {
+                            item {
+                                SectionTitle(stringResource(R.string.sent_requests))
+                            }
+
+                            items(state.data.outgoingRequests) { request ->
+                                OutgoingRequestItem(request)
+                            }
+                        }
+
+                        item {
+                            SectionTitle(stringResource(R.string.my_friends))
+                        }
+
+                        items(state.data.friends) { friend ->
+                            FriendItem(
+                                friend = friend,
+                                onRemoveClick = {
+                                    viewModel.removeFriend(friend.id)
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
