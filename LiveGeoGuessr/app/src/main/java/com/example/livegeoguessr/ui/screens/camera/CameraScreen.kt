@@ -116,11 +116,13 @@ fun CameraScreen(
 }
 
 @Composable
-private fun CameraContent(
-    viewModel: CameraViewModel
+fun CameraContent(
+    viewModel: CameraViewModel,
+    initialBitmap: Bitmap? = null,
+    initialConfirmed: Boolean = false
 ) {
-    var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var isPhotoConfirmed by remember { mutableStateOf(false) }
+    var capturedBitmap by remember { mutableStateOf(initialBitmap) }
+    var isPhotoConfirmed by remember { mutableStateOf(initialConfirmed) }
     var location by remember { mutableStateOf<LatLng?>(null) }
 
     val uploadState by viewModel.uploadState.collectAsState()

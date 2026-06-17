@@ -39,11 +39,14 @@ import org.osmdroid.views.overlay.Marker
 @Composable
 fun LocationPreview(
     onLocationAcquired: (LatLng) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useMockPermission: Boolean = false,
+    mockPermissionGranted: Boolean = false
 ) {
-    val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    val locationPermissionState = if (useMockPermission) null else rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    val isGranted = if (useMockPermission) mockPermissionGranted else locationPermissionState?.status?.isGranted == true
 
-    if (locationPermissionState.status.isGranted) {
+    if (isGranted) {
         LocationMapContent(onLocationAcquired, modifier)
     } else {
         Box(
@@ -74,7 +77,7 @@ fun LocationPreview(
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     val title = stringResource(R.string.location_permission_title)
-                    val description = if (locationPermissionState.status.shouldShowRationale) {
+                    val description = if (!useMockPermission && locationPermissionState?.status?.shouldShowRationale == true) {
                         stringResource(R.string.location_permission_rationale)
                     } else {
                         stringResource(R.string.location_permission_rationale) // Or use a shorter string if preferred
@@ -100,7 +103,7 @@ fun LocationPreview(
                     Spacer(modifier = Modifier.height(32.dp))
 
                     Button(
-                        onClick = { locationPermissionState.launchPermissionRequest() },
+                        onClick = { locationPermissionState?.launchPermissionRequest() },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -114,17 +117,19 @@ fun LocationPreview(
 
 @SuppressLint("MissingPermission")
 @Composable
-private fun LocationMapContent(
+internal fun LocationMapContent(
     onLocationAcquired: (LatLng) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialGpsEnabled: Boolean? = null,
+    initialLocation: LatLng? = null
 ) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-    var location by remember { mutableStateOf<LatLng?>(null) }
+    var location by remember { mutableStateOf<LatLng?>(initialLocation) }
     
     val locationManager = remember { context.getSystemService(Context.LOCATION_SERVICE) as LocationManager }
     var isGpsEnabled by remember { 
-        mutableStateOf(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) 
+        mutableStateOf(initialGpsEnabled ?: locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
     }
 
     val checkGpsStatus = {
