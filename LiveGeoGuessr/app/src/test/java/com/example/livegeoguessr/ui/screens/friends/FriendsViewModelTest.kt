@@ -1,6 +1,7 @@
 package com.example.livegeoguessr.ui.screens.friends
 
 import com.example.livegeoguessr.data.repository.FriendRepository
+import com.example.livegeoguessr.ui.state.ScreenState
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -53,9 +54,8 @@ class FriendsViewModelTest {
 
         val state = viewModel.uiState.value
 
-        assertFalse(state.isLoading)
-        assertTrue(state.errorMessage == null)
-        assertEquals(1, state.friends.size)
+        assertTrue(state is ScreenState.Content)
+        assertEquals(1, (state as ScreenState.Content).data.friends.size)
     }
 
     @Test
@@ -66,8 +66,8 @@ class FriendsViewModelTest {
 
         val state = viewModel.uiState.value
 
-        assertFalse(state.isLoading)
-        assertEquals("error", state.errorMessage)
+        assertTrue(state is ScreenState.Error)
+        assertEquals("error", (state as ScreenState.Error).message)
     }
 
     @Test
@@ -102,7 +102,8 @@ class FriendsViewModelTest {
 
         val state = viewModel.uiState.value
 
-        assertEquals("fail", state.errorMessage)
+        assertTrue(state is ScreenState.Error)
+        assertEquals("fail", (state as ScreenState.Error).message)
     }
 
     @Test
