@@ -22,11 +22,14 @@ class FriendsViewModelTest {
     @BeforeEach
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        mockkStatic(android.util.Log::class)
+        every { android.util.Log.e(any(), any(), any()) } returns 0
         repository = mockk(relaxed = true)
     }
 
     @AfterEach
     fun tearDown() {
+        unmockkStatic(android.util.Log::class)
         Dispatchers.resetMain()
     }
 
